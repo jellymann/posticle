@@ -28,6 +28,25 @@ export default class PgConnection {
     }));
   }
 
+  async fetchData(table) {
+    let result = await this.client.query({
+      text: `
+        SELECT * FROM ${table}
+        LIMIT 1000;
+      `,
+      rowMode: 'array'
+    });
+
+    return {
+      fields: result.fields.map(field => field.name),
+      rows: result.rows
+    };
+  }
+
+  /**
+   * @param {string} id The id of the connection
+   * @returns {PgConnection?} The connection matching the id, null if not found
+   */
   static find(id) {
     return CONNECTIONS[id];
   }

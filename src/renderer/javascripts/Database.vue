@@ -18,8 +18,26 @@
         </ul>
       </div>
       <div class="content">
-        <div v-if="currentTable">
-          {{currentTable.name}}
+        <div v-if="currentTable" class="table">
+          <div v-if="loadingData">Loading...</div>
+          <table v-else>
+            <thead>
+              <tr>
+                <th v-for="field in tableData.fields" :key="field.name">
+                  {{field}}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(row, index) in tableData.rows" :key="index">
+                <td v-for="(cell, cellIndex) in row" :key="tableData.fields[cellIndex]">
+                  {{cell}}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="status-bar">
         </div>
       </div>
       <div class="right"></div>
@@ -36,29 +54,36 @@
 
 .nav {
   height: 3rem;
+  flex-shrink: 0;
   background: $panel-background;
   border-bottom: $panel-border;
 }
 
 .main {
   display: flex;
-  flex: 1 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .left {
   width: 16rem;
+  flex-shrink: 0;
   background: $panel-background;
   border-right: $panel-border;
 }
 
 .right {
   width: 16rem;
+  flex-shrink: 0;
   background: $panel-background;
   border-left: $panel-border;
 }
 
 .content {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .tables {
@@ -78,9 +103,20 @@
 
   &__table-link {
     display: block;
-
     padding: 0.5rem 1rem;
   }
+}
+
+.table {
+  flex: 1 1 auto;
+  overflow: auto;
+}
+
+.status-bar {
+  height: 3rem;
+  flex-shrink: 0;
+  background: $panel-background;
+  border-top: $panel-border;
 }
 </style>
 
@@ -99,6 +135,8 @@ export default {
     const tables = ref([]);
 
     const currentTable = ref(null);
+    const loadingData = ref(false);
+    const tableData = ref({});
 
     callMain('fetchTables', { connectionId: props.id })
       .then(resultTables => {
@@ -112,15 +150,30 @@ export default {
         loadingTables.value = false;
       });
 
-    const selectTable = (table) => {
+    const selectTable = async (table) => {
+      loadingData.value = true;
       currentTable.value = table;
+
+      try {
+        tableData.value = await callMain('fetchData', {
+          connectionId: props.id,
+          table: currentTable.value.name
+        });
+      } catch (error) {
+        console.error(error);
+        tableData.value = { fields: [], rows: []};
+      } finally {
+        loadingData.value = false;
+      }
     }
 
     return {
       loadingTables,
       tables,
       selectTable,
-      currentTable
+      currentTable,
+      loadingData,
+      tableData
     };
   }
 }

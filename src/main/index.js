@@ -80,3 +80,10 @@ respondToRenderer('fetchTables', async (data) => {
 
   return await connection.fetchTables();
 });
+
+respondToRenderer('fetchData', async (data) => {
+  let connection = PgConnection.find(data.connectionId);
+  if (!connection) return;
+
+  return await connection.fetchData(data.table);
+});
