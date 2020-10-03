@@ -1,7 +1,7 @@
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
 import path from 'path'
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain as ipc } from 'electron'
 
 const createWindow = () => {
   // Create the browser window.
@@ -11,7 +11,8 @@ const createWindow = () => {
     height: CONFIG.height,
     webPreferences: {
       worldSafeExecuteJavaScript: true,
-      preload: path.join(app.getAppPath(), 'preload', 'index.js')
+      preload: path.join(app.getAppPath(), 'preload', 'index.js'),
+      contextIsolation: true
     }
   })
 
@@ -19,14 +20,14 @@ const createWindow = () => {
   win.loadFile('renderer/index.html')
 
   // send data to renderer process
-  win.webContents.on('did-finish-load', () => {
-    win.webContents.send('loaded', {
-      appName: CONFIG.name,
-      electronVersion: process.versions.electron,
-      nodeVersion: process.versions.node,
-      chromiumVersion: process.versions.chrome
-    })
-  })
+  // win.webContents.on('did-finish-load', () => {
+  //   win.webContents.send('loaded', {
+  //     appName: CONFIG.name,
+  //     electronVersion: process.versions.electron,
+  //     nodeVersion: process.versions.node,
+  //     chromiumVersion: process.versions.chrome
+  //   })
+  // })
 
   win.on('closed', () => {
     win = null
@@ -54,3 +55,10 @@ app.on('activate', () => {
     createWindow()
   }
 })
+
+ipc.on("hello", (event, input) => {
+  event.sender.send('message', {
+    eventName: 'hello-response',
+    eventData: `HELLO ${input.toUpperCase()}`
+  });
+});
