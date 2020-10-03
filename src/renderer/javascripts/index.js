@@ -1,7 +1,11 @@
-require('application.css')
+import 'application.css';
+
+import { createApp } from 'vue';
+import App from './App.vue';
 
 window.onLoaded((_, data) => {
-  document.getElementById('title').innerHTML = data.appName + ' App'
-  document.getElementById('details').innerHTML = 'built with Electron v' + data.electronVersion
-  document.getElementById('versions').innerHTML = 'running on Node v' + data.nodeVersion + ' and Chromium v' + data.chromiumVersion
+  createApp(App).mount('#app');
+  // document.getElementById('title').innerHTML = data.appName + ' App'
+  // document.getElementById('details').innerHTML = 'built with Electron v' + data.electronVersion
+  // document.getElementById('versions').innerHTML = 'running on Node v' + data.nodeVersion + ' and Chromium v' + data.chromiumVersion
 })
