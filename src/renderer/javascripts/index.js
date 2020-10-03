@@ -4,5 +4,5 @@ import { createApp } from 'vue';
 import App from './App.vue';
 
 document.addEventListener('DOMContentLoaded', (event) => {
-  createApp(App).mount('#app');
+  createApp(App).mount(document.body);
 });
