@@ -8,6 +8,19 @@ module.exports = {
         {
           test: /\.vue$/,
           loader: 'vue-loader'
+        },
+        {
+          test: /\.s[ac]ss$/,
+          use: [
+            'style-loader',
+            'css-loader',
+            {
+              loader: 'sass-loader',
+              options: {
+                additionalData: '@import "./src/renderer/stylesheets/variables";'
+              }
+            }
+          ]
         }
       ]
     },
