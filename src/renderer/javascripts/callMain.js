@@ -6,7 +6,7 @@ export default function callMain(eventName, eventData) {
     const callback = (event) => {
       window.removeEventListener(eventId, callback);
       if (event.detail.error) {
-        reject(event.detail.errorMessage);
+        reject(new Error(event.detail.errorMessage));
       } else {
         resolve(event.detail);
       }

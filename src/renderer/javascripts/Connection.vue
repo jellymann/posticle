@@ -55,7 +55,7 @@ export default {
           let data = await callMain('connect', { ...connection });
           window.location.hash = `database/${data.id}`;
         } catch (e) {
-          error.value = data.errorMessage;
+          error.value = e.message;
         }
       }
     }
