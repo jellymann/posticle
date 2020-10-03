@@ -17,6 +17,8 @@ const createWindow = () => {
     }
   })
 
+  // win.webContents.openDevTools();
+
   // and load the index.html of the app.
   win.loadFile('renderer/index.html')
 
@@ -55,7 +57,7 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow()
   }
-})
+});
 
 ipc.on("connect", async (event, data) => {
   let connection = new PgConnection({
@@ -71,7 +73,7 @@ ipc.on("connect", async (event, data) => {
 
     event.sender.send('message', {
       eventName: 'connect-response',
-      eventData: { error: false }
+      eventData: { id: connection.id, error: false }
     });
   } catch (e) {
     event.sender.send('message', {

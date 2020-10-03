@@ -36,7 +36,7 @@
 import { ref, reactive } from 'Vue';
 
 export default {
-  setup(props, { emit }) {
+  setup(props) {
     const error = ref(null);
     let connection = reactive({
       host: 'localhost',
@@ -55,7 +55,7 @@ export default {
         if (data.error) {
           error.value = data.errorMessage;
         } else {
-          emit('connect', {});
+          window.location.hash = `database/${data.id}`;
         }
       }
     });

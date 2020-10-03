@@ -1,3 +1,16 @@
 <template>
-  <h1>TODO</h1>
+  <h1>Connection ID: {{connectionId}}</h1>
 </template>
+
+<script>
+export default {
+  props: {
+    id: String
+  },
+  setup(props) {
+    return {
+      connectionId: props.id
+    }
+  }
+}
+</script>
