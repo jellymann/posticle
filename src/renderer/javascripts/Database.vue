@@ -3,7 +3,14 @@
     <div class="nav">
     </div>
     <div class="main">
-      <div class="left"></div>
+      <div class="left">
+        <div v-if="loadingTables">Loading...</div>
+        <ul v-else>
+          <li v-for="table in tables" :key="table.name">
+            {{ table.name }}
+          </li>
+        </ul>
+      </div>
       <div class="content"></div>
       <div class="right"></div>
     </div>
@@ -46,7 +53,8 @@
 </style>
 
 <script>
-import { provide } from 'vue';
+import { provide, ref } from 'vue';
+import callMain from './callMain';
 
 export default {
   props: {
@@ -55,7 +63,24 @@ export default {
   setup(props) {
     provide('connectionId', props.id);
 
+    const loadingTables = ref(true);
+    const tables = ref([]);
+
+    callMain('fetchTables', { connectionId: props.id })
+      .then(resultTables => {
+        tables.value = resultTables;
+      })
+      .catch(error => {
+        console.error(error);
+        tables.value = [];
+      })
+      .finally(() => {
+        loadingTables.value = false;
+      });
+
     return {
+      loadingTables,
+      tables
     };
   }
 }

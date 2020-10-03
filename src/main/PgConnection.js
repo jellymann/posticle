@@ -14,6 +14,20 @@ export default class PgConnection {
     await this.client.connect();
   }
 
+  async fetchTables() {
+    let result = await this.client.query(`
+      SELECT table_name, table_type
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+      ORDER BY table_name
+    `);
+
+    return result.rows.map(row => ({
+      name: row.table_name,
+      type: row.table_type
+    }));
+  }
+
   static find(id) {
     return CONNECTIONS[id];
   }

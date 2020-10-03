@@ -69,14 +69,14 @@ respondToRenderer('connect', async (data) => {
     database: data.database,
   });
 
-    await connection.connect();
+  await connection.connect();
 
   return { id: connection.id, error: false };
-    });
-  } catch (e) {
-    event.sender.send('message', {
-      eventName: 'connect-response',
-      eventData: { error: true, errorMessage: e.message }
-    });
-  }
+});
+
+respondToRenderer('fetchTables', async (data) => {
+  let connection = PgConnection.find(data.connectionId);
+  if (!connection) return;
+
+  return await connection.fetchTables();
 });
