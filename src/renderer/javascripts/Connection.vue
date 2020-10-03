@@ -33,7 +33,8 @@
 </style>
 
 <script>
-import { ref, reactive } from 'Vue';
+import { ref, reactive, onBeforeUnmount } from 'Vue';
+import { sendMessage, addMessageListener, removeMessageListener } from './safeIpc';
 
 export default {
   setup(props) {
@@ -46,28 +47,26 @@ export default {
       database: 'jelly',
     });
 
-    window.addEventListener('message', (event) => {
-      let message = event.data;
-
-      if (message.fromMain && message.eventName === 'connect-response') {
-        let data = message.eventData;
-
-        if (data.error) {
-          error.value = data.errorMessage;
-        } else {
-          window.location.hash = `database/${data.id}`;
-        }
+    const onConnectResponse = event => {
+      let data = event.detail;
+      if (data.error) {
+        error.value = data.errorMessage;
+      } else {
+        window.location.hash = `database/${data.id}`;
       }
+    };
+
+    addMessageListener('connect-response', onConnectResponse);
+
+    onBeforeUnmount(() => {
+      removeMessageListener('connect-response', onConnectResponse);
     });
 
     return {
       connection,
       error,
       onButtonClick: () => {
-        window.postMessage({
-          eventName: "connect",
-          eventData: { ...connection }
-        });
+        sendMessage('connect', { ...connection });
       }
     }
   }
