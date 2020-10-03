@@ -2,23 +2,23 @@
   <h1>Hello, vue + electon!</h1>
   <div>
     <label>Host</label>
-    <input v-model="host" />
+    <input v-model="connection.host" />
   </div>
   <div>
     <label>Port</label>
-    <input v-model="port" />
+    <input v-model="connection.port" />
   </div>
   <div>
     <label>Username</label>
-    <input v-model="username" />
+    <input v-model="connection.username" />
   </div>
   <div>
     <label>Password</label>
-    <input v-model="password" type="password" />
+    <input v-model="connection.password" type="password" />
   </div>
   <div>
     <label>Database</label>
-    <input v-model="database" />
+    <input v-model="connection.database" />
   </div>
   <div v-if="error" class="error">
     {{ error }}
@@ -33,16 +33,18 @@
 </style>
 
 <script>
-import { ref } from 'Vue';
+import { ref, reactive } from 'Vue';
 
 export default {
   setup(props, { emit }) {
     const error = ref(null);
-    let host = ref('localhost');
-    let port = ref('5432');
-    let username = ref('jelly');
-    let password = ref('');
-    let database = ref('jelly');
+    let connection = reactive({
+      host: 'localhost',
+      port: '5432',
+      username: 'jelly',
+      password: '',
+      database: 'jelly',
+    });
 
     window.addEventListener('message', (event) => {
       let message = event.data;
@@ -59,22 +61,12 @@ export default {
     });
 
     return {
-      host,
-      port,
-      username,
-      password,
-      database,
+      connection,
       error,
       onButtonClick: () => {
         window.postMessage({
           eventName: "connect",
-          eventData: {
-            host: host.value,
-            port: port.value,
-            username: username.value,
-            password: password.value,
-            database: database.value,
-          }
+          eventData: { ...connection }
         });
       }
     }
