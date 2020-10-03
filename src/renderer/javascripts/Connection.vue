@@ -34,7 +34,7 @@
 
 <script>
 import { ref, reactive, onBeforeUnmount } from 'Vue';
-import { sendMessage, addMessageListener, removeMessageListener } from './safeIpc';
+import callMain from './callMain';
 
 export default {
   setup(props) {
@@ -47,26 +47,16 @@ export default {
       database: 'jelly',
     });
 
-    const onConnectResponse = event => {
-      let data = event.detail;
-      if (data.error) {
-        error.value = data.errorMessage;
-      } else {
-        window.location.hash = `database/${data.id}`;
-      }
-    };
-
-    addMessageListener('connect-response', onConnectResponse);
-
-    onBeforeUnmount(() => {
-      removeMessageListener('connect-response', onConnectResponse);
-    });
-
     return {
       connection,
       error,
-      onButtonClick: () => {
-        sendMessage('connect', { ...connection });
+      onButtonClick: async () => {
+        try {
+          let data = await callMain('connect', { ...connection });
+          window.location.hash = `database/${data.id}`;
+        } catch (e) {
+          error.value = data.errorMessage;
+        }
       }
     }
   }

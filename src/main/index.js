@@ -1,8 +1,9 @@
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
 import path from 'path'
-import { app, BrowserWindow, ipcMain as ipc } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import PgConnection from './PgConnection';
+import respondToRenderer from './respondToRenderer';
 
 const createWindow = () => {
   // Create the browser window.
@@ -59,7 +60,7 @@ app.on('activate', () => {
   }
 });
 
-ipc.on("connect", async (event, data) => {
+respondToRenderer('connect', async (data) => {
   let connection = new PgConnection({
     host: data.host,
     port: data.port,
@@ -68,12 +69,9 @@ ipc.on("connect", async (event, data) => {
     database: data.database,
   });
 
-  try {
     await connection.connect();
 
-    event.sender.send('message', {
-      eventName: 'connect-response',
-      eventData: { id: connection.id, error: false }
+  return { id: connection.id, error: false };
     });
   } catch (e) {
     event.sender.send('message', {
