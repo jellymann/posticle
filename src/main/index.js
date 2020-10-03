@@ -2,6 +2,7 @@
 // code. You can also put them in separate files and require them here.
 import path from 'path'
 import { app, BrowserWindow, ipcMain as ipc } from 'electron'
+import PgConnection from './PgConnection';
 
 const createWindow = () => {
   // Create the browser window.
@@ -56,9 +57,26 @@ app.on('activate', () => {
   }
 })
 
-ipc.on("hello", (event, input) => {
-  event.sender.send('message', {
-    eventName: 'hello-response',
-    eventData: `HELLO ${input.toUpperCase()}`
+ipc.on("connect", async (event, data) => {
+  let connection = new PgConnection({
+    host: data.host,
+    port: data.port,
+    username: data.username,
+    password: data.password,
+    database: data.database,
   });
+
+  try {
+    await connection.connect();
+
+    event.sender.send('message', {
+      eventName: 'connect-response',
+      eventData: { error: false }
+    });
+  } catch (e) {
+    event.sender.send('message', {
+      eventName: 'connect-response',
+      eventData: { error: true, errorMessage: e.message }
+    });
+  }
 });
