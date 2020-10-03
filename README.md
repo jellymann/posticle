@@ -1,12 +1,12 @@
 # Posticle
 
-> My Posticle app built with Electron
+> Cross-platform PostgreSQL client, built with Electron
 
 
 ## Dev
 
 ```
-$ npm install
+$ yarn
 ```
 
 ### Run
