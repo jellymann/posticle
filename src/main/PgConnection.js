@@ -28,18 +28,29 @@ export default class PgConnection {
     }));
   }
 
-  async fetchData(table) {
+  async fetchData(table, { offset = 0, limit = 1000 } = {}) {
     let result = await this.client.query({
       text: `
+        SELECT COUNT(*) as count FROM ${table};
+      `
+    });
+
+    let count = result.rows[0].count;
+
+    result = await this.client.query({
+      text: `
         SELECT * FROM ${table}
-        LIMIT 1000;
+        LIMIT $1
+        OFFSET $2;
       `,
+      values: [limit, offset],
       rowMode: 'array'
     });
 
     return {
       fields: result.fields.map(field => field.name),
-      rows: result.rows
+      rows: result.rows,
+      count
     };
   }
 

@@ -85,5 +85,5 @@ respondToRenderer('fetchData', async (data) => {
   let connection = PgConnection.find(data.connectionId);
   if (!connection) return;
 
-  return await connection.fetchData(data.table);
+  return await connection.fetchData(data.table, data.options || {});
 });
