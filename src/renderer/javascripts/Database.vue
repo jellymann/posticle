@@ -4,18 +4,7 @@
     </div>
     <div class="main">
       <div class="left">
-        <div v-if="loadingTables">Loading...</div>
-        <ul v-else class="tables">
-          <li
-            v-for="table in tables"
-            :key="table.name"
-            :class="{ 'tables__table': true, 'tables__table--current': table === currentTable }"
-          >
-            <a @click.prevent="selectTable(table)" class="tables__table-link">
-              {{ table.name }}
-            </a>
-          </li>
-        </ul>
+        <schema v-model="currentTable" />
       </div>
       <div class="content">
         <div v-if="currentTable && loadingData">Loading...</div>
@@ -86,27 +75,6 @@
   min-width: 0;
 }
 
-.tables {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-
-  &__table {
-    cursor: pointer;
-    margin: 0.5rem 0;
-    
-    &:hover, &--current {
-      background-color: $highlight-background;
-      color: $highlight-foreground;
-    }
-  }
-
-  &__table-link {
-    display: block;
-    padding: 0.5rem 1rem;
-  }
-}
-
 .table {
   flex: 1 1 auto;
   overflow: auto;
@@ -161,43 +129,31 @@
 </style>
 
 <script>
-import { provide, ref } from 'vue';
+import { provide, ref, watchEffect } from 'vue';
 import callMain from './callMain';
+import Schema from './Schema.vue';
 
 export default {
+  components: { Schema },
   props: {
     id: String
   },
   setup(props) {
     provide('connectionId', props.id);
 
-    const loadingTables = ref(true);
-    const tables = ref([]);
-
     const currentTable = ref(null);
     const loadingData = ref(false);
     const tableData = ref({});
 
-    callMain('fetchTables', { connectionId: props.id })
-      .then(resultTables => {
-        tables.value = resultTables;
-      })
-      .catch(error => {
-        console.error(error);
-        tables.value = [];
-      })
-      .finally(() => {
-        loadingTables.value = false;
-      });
-
     const selectTable = async (table) => {
+      if (!table) return;
+
       loadingData.value = true;
-      currentTable.value = table;
 
       try {
         tableData.value = await callMain('fetchData', {
           connectionId: props.id,
-          table: currentTable.value.name
+          table: table.name
         });
       } catch (error) {
         console.error(error);
@@ -207,9 +163,11 @@ export default {
       }
     }
 
+    watchEffect(() => {
+      selectTable(currentTable.value);
+    });
+
     return {
-      loadingTables,
-      tables,
       selectTable,
       currentTable,
       loadingData,
