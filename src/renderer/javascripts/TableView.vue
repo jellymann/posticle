@@ -19,16 +19,18 @@
     </table>
   </div>
   <div v-if="tableData" class="status-bar">
-    <div>{{ startRow }} - {{ endRow }} of {{ tableData.count }}</div>
-    <button @click="previousPage">
-      &lt;
-    </button>
-    <button>
-      Page {{ currentPage }} of {{ totalPages }}
-    </button>
-    <button @click="nextPage">
-      &gt;
-    </button>
+    <div class="status-bar__center">{{ startRow }} - {{ endRow }} of {{ tableData.count }}</div>
+    <div class="pagination">
+      <button class="pagination__previous" @click="previousPage">
+        &lt;
+      </button>
+      <button class="pagination__page">
+        Page {{ currentPage }} of {{ totalPages }}
+      </button>
+      <button class="pagination__next" @click="nextPage">
+        &gt;
+      </button>
+    </div>
   </div>
 </template>
 
@@ -79,10 +81,39 @@
 }
 
 .status-bar {
-  height: 3rem;
   flex-shrink: 0;
   background: $panel-background;
   border-top: $panel-border;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+
+  &__center {
+    margin: 0 auto;
+  }
+}
+
+.pagination {
+  &__previous, &__page, &__next {
+    @include button;
+    outline: none;
+  }
+
+  &__previous {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: none;
+  }
+
+  &__page {
+    border-radius: 0;
+  }
+
+  &__next {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: none;
+  }
 }
 </style>
 
