@@ -9,6 +9,7 @@ export default function respondToRenderer(eventName, callback) {
         eventData: response
       });
     } catch (e) {
+      console.error(e);
       event.sender.send('message', {
         eventName: data.eventId,
         eventData: { error: true, errorMessage: e.message }
