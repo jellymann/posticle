@@ -1,6 +1,6 @@
 <template>
-  <div v-if="loadingData">Loading...</div>
-  <div v-if="!loadingData" class="table">
+  <div v-if="loadingData" class="table">Loading...</div>
+  <div v-if="!loadingData && tableData" class="table">
     <table class="table__table">
       <thead>
         <tr>
@@ -18,7 +18,17 @@
       </tbody>
     </table>
   </div>
-  <div v-if="!loadingData" class="status-bar">
+  <div v-if="tableData" class="status-bar">
+    <div>{{ startRow }} - {{ endRow }} of {{ tableData.count }}</div>
+    <button @click="previousPage">
+      &lt;
+    </button>
+    <button>
+      Page {{ currentPage }} of {{ totalPages }}
+    </button>
+    <button @click="nextPage">
+      &gt;
+    </button>
   </div>
 </template>
 
@@ -77,8 +87,10 @@
 </style>
 
 <script>
-import { inject, ref, watch, watchEffect } from 'vue';
+import { computed, inject, ref, watch, watchEffect } from 'vue';
 import callMain from './callMain';
+
+const ROWS_PER_PAGE = 1000;
 
 export default {
   props: {
@@ -87,31 +99,67 @@ export default {
   setup(props) {
     const connectionId = inject('connectionId');
 
-    const tableData = ref({});
+    const tableData = ref(null);
     const loadingData = ref(false);
 
-    const loadData = async (table) => {
+    const currentPage = ref(1);
+
+    const startRow = computed(() => {
+      return (currentPage.value - 1) * ROWS_PER_PAGE + 1;
+    });
+    const endRow = computed(() => {
+      return Math.min(startRow.value + ROWS_PER_PAGE - 1, tableData.value.count);
+    });
+    const totalPages = computed(() => {
+      return Math.ceil(tableData.value.count / ROWS_PER_PAGE);
+    });
+
+    const previousPage = () => {
+      currentPage.value = Math.max(currentPage.value - 1, 1);
+    };
+    const nextPage = () => {
+      currentPage.value = Math.min(currentPage.value + 1, totalPages.value);
+    };
+
+    const loadData = async (table, offset) => {
       loadingData.value = true;
 
       try {
         tableData.value = await callMain('fetchData', {
           connectionId,
-          table: table.name
+          table: table.name,
+          options: {
+            limit: ROWS_PER_PAGE,
+            offset
+          }
         });
       } catch (error) {
         console.error(error);
-        tableData.value = { fields: [], rows: []};
+        tableData.value = null;
       } finally {
         loadingData.value = false;
       }
     }
 
-    watchEffect(() => loadData(props.table));
+    watchEffect(() => loadData(props.table, startRow.value));
+
+    const reset = () => {
+      currentPage.value = 1;
+      tableData.value = null;
+    }
+
+    watchEffect(() => reset(props.table));
 
     return {
       table: props.table,
       tableData,
-      loadingData
+      loadingData,
+      currentPage,
+      startRow,
+      endRow,
+      totalPages,
+      previousPage,
+      nextPage
     }
   }
 }
