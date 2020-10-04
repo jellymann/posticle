@@ -98,15 +98,7 @@
   }
 
   &__action {
-    border-radius: $border-radius;
-    background: $button-background;
-    border: $button-border;
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-
-    &:hover {
-      background: $button-background-hover;
-    }
+    @include button;
   }
 }
 </style>

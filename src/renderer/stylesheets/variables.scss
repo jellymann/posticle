@@ -10,9 +10,9 @@ $panel-border-color: map-get($gray, lighter);
 $panel-border-width: 1px;
 $panel-border: $panel-border-width solid $panel-border-color;
 
-$button-background: map-get($gray, light);
-$button-background-hover: map-get($gray, lighter);
-$button-border: 1px solid map-get($gray, default);
+$button-background: map-get($gray, lighter);
+$button-background-hover: map-get($gray, lightest);
+$button-border: 1px solid map-get($gray, light);
 
 $input-border: 1px solid map-get($gray, lighter);
 

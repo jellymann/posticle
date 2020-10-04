@@ -17,7 +17,10 @@ module.exports = {
             {
               loader: 'sass-loader',
               options: {
-                additionalData: '@import "./src/renderer/stylesheets/variables";'
+                additionalData: '@import "preload";',
+                sassOptions: {
+                  includePaths: ['./src/renderer/stylesheets']
+                }
               }
             }
           ]
