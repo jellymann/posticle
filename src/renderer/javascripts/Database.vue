@@ -18,26 +18,26 @@
         </ul>
       </div>
       <div class="content">
-        <div v-if="currentTable" class="table">
-          <div v-if="loadingData">Loading...</div>
-          <table v-else>
+        <div v-if="currentTable && loadingData">Loading...</div>
+        <div v-if="currentTable && !loadingData" class="table">
+          <table class="table__table">
             <thead>
               <tr>
-                <th v-for="field in tableData.fields" :key="field.name">
+                <th class="table__th" v-for="field in tableData.fields" :key="field.name">
                   {{field}}
                 </th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="(row, index) in tableData.rows" :key="index">
-                <td v-for="(cell, cellIndex) in row" :key="tableData.fields[cellIndex]">
+                <td class="table__td" v-for="(cell, cellIndex) in row" :key="tableData.fields[cellIndex]">
                   {{cell}}
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-        <div class="status-bar">
+        <div v-if="currentTable && !loadingData" class="status-bar">
         </div>
       </div>
       <div class="right"></div>
@@ -110,6 +110,46 @@
 .table {
   flex: 1 1 auto;
   overflow: auto;
+  position: relative;
+
+  &__table {
+    border-collapse: collapse;
+  }
+
+  &__th {
+    position: sticky;
+    top: 0;
+    background: $panel-background;
+    border-right: $panel-border;
+    font-weight: normal;
+    height: 2rem;
+    padding: 0.25rem 0.5rem;
+    text-align: left;
+
+    &::after {
+      position: absolute;
+      content: '';
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: $panel-border-width;
+      background-color: $panel-border-color;
+    }
+  }
+
+  &__td {
+    height: 3rem;
+    white-space: nowrap;
+    max-width: 300px;
+    overflow-x: auto;
+    padding: 0.25rem 0.5rem;
+    border-bottom: $panel-border;
+    border-right: $panel-border;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
 }
 
 .status-bar {
