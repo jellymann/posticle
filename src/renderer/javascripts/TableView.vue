@@ -1,7 +1,7 @@
 <template>
   <div v-if="loadingData" class="table">Loading...</div>
-  <div v-if="!loadingData && tableData" class="table">
-    <table class="table__table">
+  <div v-if="!loadingData && tableData " class="table">
+    <table v-if="currentTab === 'content'" class="table__table">
       <thead>
         <tr>
           <th class="table__th" v-for="field in tableData.fields" :key="field.name">
@@ -17,10 +17,27 @@
         </tr>
       </tbody>
     </table>
+    <div v-if="currentTab === 'structure'">
+      <h1>TODO</h1>
+    </div>
   </div>
   <div v-if="tableData" class="status-bar">
-    <div class="status-bar__center">{{ startRow }} - {{ endRow }} of {{ tableData.count }}</div>
-    <div class="pagination">
+    <div class="toggle-button">
+      <button
+        :class="{ 'toggle-button__button': true, 'toggle-button__button--active': currentTab === 'content' }"
+        @click="currentTab = 'content'"
+      >
+        Content
+      </button>
+      <button
+        :class="{ 'toggle-button__button': true, 'toggle-button__button--active': currentTab === 'structure' }"
+        @click="currentTab = 'structure'"
+      >
+        Structure
+      </button>
+    </div>
+    <div v-if="currentTab === 'content'" class="status-bar__center">{{ startRow }} - {{ endRow }} of {{ tableData.count }}</div>
+    <div v-if="currentTab === 'content'" class="pagination">
       <button class="pagination__previous" @click="previousPage">
         &lt;
       </button>
@@ -115,6 +132,31 @@
     border-left: none;
   }
 }
+
+.toggle-button {
+  &__button {
+    @include button;
+    outline: none;
+
+    &--active, &--active:hover {
+      background: map-get($gray, dark);
+      border-color: map-get($gray, dark);
+      color: map-get($gray, lightest);
+    }
+
+    &:not(:first-child) {
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      border-left: none;
+    }
+
+    &:not(:last-child) {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+      border-right: none;
+    }
+  }
+}
 </style>
 
 <script>
@@ -129,6 +171,8 @@ export default {
   },
   setup(props) {
     const connectionId = inject('connectionId');
+
+    const currentTab = ref("content");
 
     const tableData = ref(null);
     const loadingData = ref(false);
@@ -190,7 +234,8 @@ export default {
       endRow,
       totalPages,
       previousPage,
-      nextPage
+      nextPage,
+      currentTab
     }
   }
 }

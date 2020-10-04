@@ -2,7 +2,8 @@ $gray: (
   lightest: #fafbfc,
   lighter: #e1e4e8,
   light: #ccc,
-  default: #666
+  default: #666,
+  dark: #333
 );
 
 $panel-background: map-get($gray, lightest);
