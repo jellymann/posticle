@@ -1,5 +1,20 @@
-$panel-background: #fafbfc;
-$panel-border: 1px solid #e1e4e8;
+$gray: (
+  lightest: #fafbfc,
+  lighter: #e1e4e8,
+  light: #ccc,
+  default: #666
+);
+
+$panel-background: map-get($gray, lightest);
+$panel-border: 1px solid map-get($gray, lighter);
+
+$button-background: map-get($gray, light);
+$button-background-hover: map-get($gray, lighter);
+$button-border: 1px solid map-get($gray, default);
+
+$input-border: 1px solid map-get($gray, lighter);
 
 $highlight-background: #378ad3;
-$highlight-foreground: #fff;
+$highlight-foreground: map-get($gray, lightest);
+
+$border-radius: 6px;
