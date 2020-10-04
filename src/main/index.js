@@ -87,3 +87,10 @@ respondToRenderer('fetchData', async (data) => {
 
   return await connection.fetchData(data.table, data.options || {});
 });
+
+respondToRenderer('fetchStructure', async (data) => {
+  let connection = PgConnection.find(data.connectionId);
+  if (!connection) return;
+
+  return await connection.fetchStructure(data.table);
+});

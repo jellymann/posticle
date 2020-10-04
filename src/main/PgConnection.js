@@ -54,6 +54,24 @@ export default class PgConnection {
     };
   }
 
+  async fetchStructure(table) {
+    let result = await this.client.query({
+      text: `
+        SELECT c.column_name, c.data_type, c.column_default, c.is_nullable
+        FROM information_schema.columns as c
+        WHERE c.table_schema = $1
+        AND c.table_name = $2;
+      `,
+      values: ['public', table]
+    });
+
+    console.log(result.rows);
+
+    return {
+      columns: result.rows
+    };
+  }
+
   /**
    * @param {string} id The id of the connection
    * @returns {PgConnection?} The connection matching the id, null if not found

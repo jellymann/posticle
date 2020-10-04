@@ -1,27 +1,52 @@
 <template>
-  <div v-if="loadingData" class="table">Loading...</div>
-  <div v-if="!loadingData && tableData " class="table">
-    <table v-if="currentTab === 'content'" class="table__table">
+  <div v-if="currentTab === 'content'" class="content">
+    <div v-if="loadingData">Loading...</div>
+    <table v-if="!loadingData && tableData" class="content__table">
       <thead>
         <tr>
-          <th class="table__th" v-for="field in tableData.fields" :key="field.name">
+          <th class="content__th" v-for="field in tableData.fields" :key="field.name">
             {{field}}
           </th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(row, index) in tableData.rows" :key="index">
-          <td class="table__td" v-for="(cell, cellIndex) in row" :key="tableData.fields[cellIndex]">
+          <td class="content__td" v-for="(cell, cellIndex) in row" :key="tableData.fields[cellIndex]">
             {{cell}}
           </td>
         </tr>
       </tbody>
     </table>
-    <div v-if="currentTab === 'structure'">
-      <h1>TODO</h1>
+  </div>
+
+  <div v-if="currentTab === 'structure'" class="structure">
+    <div v-if="loadingStructure">Loading...</div>
+    <div v-if="!loadingStructure && tableStructure">
+      <label>Table name</label>
+      <input readonly :value="table.name" />
+
+      <table>
+        <thead>
+          <tr>
+            <th>Column name</th>
+            <th>Type</th>
+            <th>Default</th>
+            <th>Constraints</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="column in tableStructure.columns" :key="column.column_name">
+            <td>{{column.column_name}}</td>
+            <td>{{column.data_type}}</td>
+            <td>{{column.column_default}}</td>
+            <td>{{column.is_nullable === 'NO' ? 'NOT NULL' : ''}}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
-  <div v-if="tableData" class="status-bar">
+
+  <div class="status-bar">
     <div class="toggle-button">
       <button
         :class="{ 'toggle-button__button': true, 'toggle-button__button--active': currentTab === 'content' }"
@@ -36,8 +61,8 @@
         Structure
       </button>
     </div>
-    <div v-if="currentTab === 'content'" class="status-bar__center">{{ startRow }} - {{ endRow }} of {{ tableData.count }}</div>
-    <div v-if="currentTab === 'content'" class="pagination">
+    <div v-if="currentTab === 'content' && tableData" class="status-bar__center">{{ startRow }} - {{ endRow }} of {{ tableData.count }}</div>
+    <div v-if="currentTab === 'content' && tableData" class="pagination">
       <button class="pagination__previous" @click="previousPage">
         &lt;
       </button>
@@ -52,7 +77,7 @@
 </template>
 
 <style lang="scss" scoped>
-.table {
+.content {
   flex: 1 1 auto;
   overflow: auto;
   position: relative;
@@ -95,6 +120,12 @@
       display: none;
     }
   }
+}
+
+.structure {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  position: relative;
 }
 
 .status-bar {
@@ -176,6 +207,9 @@ export default {
 
     const tableData = ref(null);
     const loadingData = ref(false);
+    
+    const tableStructure = ref(null);
+    const loadingStructure = ref(false);
 
     const currentPage = ref(1);
 
@@ -216,7 +250,32 @@ export default {
       }
     }
 
-    watchEffect(() => loadData(props.table, startRow.value));
+    const loadStructure = async (table) => {
+      loadingStructure.value = true;
+
+      try {
+        tableStructure.value = await callMain('fetchStructure', {
+          connectionId,
+          table: table.name
+        });
+      } catch (error) {
+        console.error(error);
+        tableStructure.value = null;
+      } finally {
+        loadingStructure.value = false;
+      }
+    }
+
+    watchEffect(() => {
+      switch (currentTab.value) {
+      case 'content':
+        loadData(props.table, startRow.value);
+        break;
+      case 'structure':
+        loadStructure(props.table);
+        break;
+      }
+    });
 
     const reset = () => {
       currentPage.value = 1;
@@ -235,7 +294,9 @@ export default {
       totalPages,
       previousPage,
       nextPage,
-      currentTab
+      currentTab,
+      tableStructure,
+      loadingStructure
     }
   }
 }
