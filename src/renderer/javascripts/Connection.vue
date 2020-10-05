@@ -104,7 +104,7 @@
 </style>
 
 <script>
-import { ref, reactive, onBeforeUnmount } from 'Vue';
+import { ref, reactive, onBeforeUnmount } from 'vue';
 import callMain from './callMain';
 
 export default {
