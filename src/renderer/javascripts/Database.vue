@@ -39,6 +39,8 @@
   flex-shrink: 0;
   background: $panel-background;
   border-right: $panel-border;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .right {
