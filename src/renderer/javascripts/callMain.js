@@ -12,6 +12,6 @@ export default function callMain(eventName, eventData) {
       }
     }
     window.addEventListener(eventId, callback, false);
-    window.postMessage({ eventName, eventData, eventId, fromMain: false });
+    window.postMessage({ eventName, eventData, eventId });
   });
 }

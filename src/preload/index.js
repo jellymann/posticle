@@ -8,21 +8,13 @@ process.once('loaded', () => {
   window.addEventListener('message', event => {
     let message = event.data;
 
-    if (message.fromMain) {
-      window.dispatchEvent(new CustomEvent(
-        message.eventName,
-        { detail: message.eventData }
-      ));
-    } else {
-      ipcRenderer.send(message.eventName, message);
-    }
+    ipcRenderer.send(message.eventName, message);
   });
 
   ipcRenderer.on('message', (event, data) => {
-    window.postMessage({
-      fromMain: true,
-      eventName: data.eventName,
-      eventData: data.eventData
-    });
+    window.dispatchEvent(new CustomEvent(
+      data.eventName,
+      { detail: data.eventData }
+    ));
   });
 });
