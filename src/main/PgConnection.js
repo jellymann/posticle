@@ -65,8 +65,6 @@ export default class PgConnection {
       values: ['public', table]
     });
 
-    console.log(result.rows);
-
     return {
       columns: result.rows
     };
