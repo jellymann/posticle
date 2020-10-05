@@ -218,13 +218,13 @@ export default {
     });
 
     const startRow = computed(() => {
-      return offset.value + 1;
+      return Math.min(offset.value + 1, tableData.value.count);
     });
     const endRow = computed(() => {
       return Math.min(offset.value + ROWS_PER_PAGE, tableData.value.count);
     });
     const totalPages = computed(() => {
-      return Math.ceil(tableData.value.count / ROWS_PER_PAGE);
+      return Math.min(Math.ceil(tableData.value.count / ROWS_PER_PAGE), 1);
     });
 
     const previousPage = () => {
