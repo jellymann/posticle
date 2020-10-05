@@ -213,11 +213,15 @@ export default {
 
     const currentPage = ref(1);
 
+    const offset = computed(() => {
+      return (currentPage.value - 1) * ROWS_PER_PAGE;
+    });
+
     const startRow = computed(() => {
-      return (currentPage.value - 1) * ROWS_PER_PAGE + 1;
+      return offset.value + 1;
     });
     const endRow = computed(() => {
-      return Math.min(startRow.value + ROWS_PER_PAGE - 1, tableData.value.count);
+      return Math.min(offset.value + ROWS_PER_PAGE, tableData.value.count);
     });
     const totalPages = computed(() => {
       return Math.ceil(tableData.value.count / ROWS_PER_PAGE);
@@ -269,7 +273,7 @@ export default {
     watchEffect(() => {
       switch (currentTab.value) {
       case 'content':
-        loadData(props.table, startRow.value);
+        loadData(props.table, offset.value);
         break;
       case 'structure':
         loadStructure(props.table);
