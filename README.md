@@ -5,9 +5,16 @@
 
 ## Dev
 
-```
-$ yarn
-```
+### Install pre-requisites
+
+1. [node](https://nodejs.org/en/download/)
+2. [yarn](https://classic.yarnpkg.com/en/docs/install)
+3. [bozon](https://github.com/railsware/bozon#installation)
+4. Then run yarn
+
+   ```
+   $ yarn
+   ```
 
 ### Run
 
