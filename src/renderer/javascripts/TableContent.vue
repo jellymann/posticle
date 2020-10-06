@@ -1,9 +1,7 @@
 <template>
   <div class="content">
     <div v-if="loading">Loading...</div>
-    <div v-if="filterOpen" class="filters">
-      <h1>TODO: Filter options</h1>
-    </div>
+    <table-filter v-if="filterOpen"></table-filter>
     <table v-if="!loading && data" class="content__table">
       <thead>
         <tr>
@@ -49,11 +47,6 @@
 </template>
 
 <style lang="scss" scoped>
-.filters {
-  background: $panel-background;
-  border-bottom: $panel-border;
-}
-
 .content {
   flex: 1 1 auto;
   overflow: auto;
@@ -134,10 +127,14 @@
 <script>
 import { computed, inject, ref, watch, watchEffect } from 'vue';
 import callMain from './callMain';
+import TableFilter from "./TableFilter.vue";
 
 const ROWS_PER_PAGE = 1000;
 
 export default {
+  components: {
+    TableFilter
+  },
   props: {
     table: Object
   },
