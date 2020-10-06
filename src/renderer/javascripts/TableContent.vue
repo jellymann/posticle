@@ -20,18 +20,22 @@
   </div>
 
   <div class="status-bar">
-    <slot></slot>
+    <div class="status-bar__left">
+      <slot></slot>
+    </div>
     <div v-if="data" class="status-bar__center">{{ startRow }} - {{ endRow }} of {{ data.count }}</div>
-    <div v-if="data" class="pagination">
-      <button class="pagination__previous" @click="previousPage">
-        &lt;
-      </button>
-      <button class="pagination__page">
-        Page {{ currentPage }} of {{ totalPages }}
-      </button>
-      <button class="pagination__next" @click="nextPage">
-        &gt;
-      </button>
+    <div class="status-bar__right">
+      <div v-if="data" class="pagination">
+        <button class="pagination__previous" @click="previousPage">
+          &lt;
+        </button>
+        <button class="pagination__page">
+          Page {{ currentPage }} of {{ totalPages }}
+        </button>
+        <button class="pagination__next" @click="nextPage">
+          &gt;
+        </button>
+      </div>
     </div>
   </div>
 </template>

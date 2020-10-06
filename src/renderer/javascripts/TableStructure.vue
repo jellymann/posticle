@@ -27,7 +27,9 @@
   </div>
 
   <div class="status-bar">
-    <slot></slot>
+    <div class="status-bar__left">
+      <slot></slot>
+    </div>
   </div>
 </template>
 
