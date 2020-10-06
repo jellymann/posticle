@@ -224,7 +224,7 @@ export default {
       return Math.min(offset.value + ROWS_PER_PAGE, tableData.value.count);
     });
     const totalPages = computed(() => {
-      return Math.min(Math.ceil(tableData.value.count / ROWS_PER_PAGE), 1);
+      return Math.max(Math.ceil(tableData.value.count / ROWS_PER_PAGE), 1);
     });
 
     const previousPage = () => {
