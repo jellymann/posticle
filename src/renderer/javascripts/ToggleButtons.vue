@@ -15,13 +15,6 @@
 .toggle-button {
   &__button {
     @include button;
-    outline: none;
-
-    &--active, &--active:hover {
-      background: map-get($gray, dark);
-      border-color: map-get($gray, dark);
-      color: map-get($gray, lightest);
-    }
 
     &:not(:first-child) {
       border-top-left-radius: 0;

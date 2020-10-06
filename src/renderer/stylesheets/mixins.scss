@@ -4,9 +4,16 @@
   border: $button-border;
   padding: 0.5rem 1rem;
   cursor: pointer;
+  outline: none;
 
   &:hover {
     background: $button-background-hover;
+  }
+
+  &--active, &--active:hover {
+    background: map-get($gray, dark);
+    border-color: map-get($gray, dark);
+    color: map-get($gray, lightest);
   }
 }
 
@@ -20,5 +27,9 @@
 
   &__center {
     margin: 0 auto;
+  }
+
+  &__left, &__right {
+    display: flex;
   }
 }

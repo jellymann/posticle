@@ -1,6 +1,9 @@
 <template>
   <div class="content">
     <div v-if="loading">Loading...</div>
+    <div v-if="filterOpen" class="filters">
+      <h1>TODO: Filter options</h1>
+    </div>
     <table v-if="!loading && data" class="content__table">
       <thead>
         <tr>
@@ -24,8 +27,13 @@
       <slot></slot>
     </div>
     <div v-if="data" class="status-bar__center">{{ startRow }} - {{ endRow }} of {{ data.count }}</div>
-    <div class="status-bar__right">
-      <div v-if="data" class="pagination">
+    <div v-if="data" class="status-bar__right">
+      <button
+        :class="{ 'filter-button': true, 'filter-button--active': filterOpen }"
+        @click="filterOpen = !filterOpen">
+        Filter
+      </button>
+      <div class="pagination">
         <button class="pagination__previous" @click="previousPage">
           &lt;
         </button>
@@ -41,6 +49,11 @@
 </template>
 
 <style lang="scss" scoped>
+.filters {
+  background: $panel-background;
+  border-bottom: $panel-border;
+}
+
 .content {
   flex: 1 1 auto;
   overflow: auto;
@@ -90,10 +103,14 @@
   @include status-bar;
 }
 
+.filter-button {
+  @include button;
+  margin-right: 0.5rem;
+}
+
 .pagination {
   &__previous, &__page, &__next {
     @include button;
-    outline: none;
   }
 
   &__previous {
@@ -129,6 +146,8 @@ export default {
 
     const data = ref(null);
     const loading = ref(false);
+
+    const filterOpen = ref(false);
 
     const currentPage = ref(1);
 
@@ -192,7 +211,8 @@ export default {
       endRow,
       totalPages,
       previousPage,
-      nextPage
+      nextPage,
+      filterOpen
     }
   }
 }
