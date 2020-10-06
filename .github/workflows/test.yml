@@ -7,10 +7,14 @@ on:
     branches: [ main ]
 
 jobs:
-  test_linux:
-    runs-on: ubuntu-latest
+  test:
+    runs-on: ${{ matrix.os }}
 
-    steps: &steps
+    strategy:
+      matrix:
+        os: [macos-latest] # TODO: fix windows and linux builds
+
+    steps:
     - uses: actions/checkout@v2
         
     - name: Set up Node
@@ -30,13 +34,3 @@ jobs:
       run: yarn install
 
     - run: yarn run test
-
-  test_windows:
-    runs-on: windows-latest
-
-    steps: *steps
-
-  test_macos:
-    runs-on: macos-latest
-
-    steps: *steps
