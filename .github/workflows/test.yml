@@ -1,0 +1,42 @@
+name: Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test_linux:
+    runs-on: ubuntu-latest
+
+    steps: &steps
+    - uses: actions/checkout@v2
+        
+    - name: Set up Node
+      uses: actions/setup-node@master
+      with:
+        node-version: 12.18.4
+        
+    - name: Cache JavaScript dependencies
+      uses: actions/cache@v1
+      with:
+        path: node_modules
+        key: yarn-v1-${{ hashFiles('.node-version') }}-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          yarn-v1-${{ hashFiles('.node-version') }}-
+
+    - name: Install JavaScript dependencies
+      run: yarn install
+
+    - run: yarn run test
+
+  test_windows:
+    runs-on: windows-latest
+
+    steps: *steps
+
+  test_macos:
+    runs-on: macos-latest
+
+    steps: *steps
