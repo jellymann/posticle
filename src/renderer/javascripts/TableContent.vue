@@ -1,7 +1,7 @@
 <template>
   <div class="content">
-    <div v-if="loading">Loading...</div>
     <table-filter v-if="filterOpen"></table-filter>
+    <div v-if="loading">Loading...</div>
     <table v-if="!loading && data" class="content__table">
       <thead>
         <tr>
@@ -195,6 +195,7 @@ export default {
 
     const reset = () => {
       currentPage.value = 1;
+      filterOpen.value = false;
       data.value = null;
     }
 
