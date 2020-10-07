@@ -2,7 +2,11 @@
   <div class="filter">
     <ul class="filter__filters">
       <li v-for="(filter, index) in filters" :key="index" class="filter__filter">
-        <select class="filter__select"></select>
+        <select class="filter__select">
+          <option v-for="column in columns" :key="column.column_name" :value="column.column_name">
+            {{column.column_name}}
+          </option>
+        </select>
         <select class="filter__select"></select>
         <input class="filter__input" v-model="filter.text" />
         <button class="filter__button" @click="removeFilter(index)" v-if="filters.length > 1"> - </button>
@@ -73,6 +77,9 @@
 import { ref } from 'vue';
 
 export default {
+  props: {
+    columns: Array,
+  },
   setup() {
     const createFilter = () => {
       return { column: 'foo', operator: 'bar', text: '' };
