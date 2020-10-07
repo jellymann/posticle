@@ -1,5 +1,9 @@
 <template>
-  <table-filter v-if="filterOpen" :columns="structure.columns"></table-filter>
+  <table-filter
+    v-if="filterOpen && data"
+    :columns="data.structure.columns"
+    @applyFilter="applyFilter"
+  />
   <div class="content">
     <div v-if="loading">Loading...</div>
     <table v-if="!loading && data" class="content__table">
@@ -143,7 +147,6 @@ export default {
 
     const data = ref(null);
     const loading = ref(false);
-    const structure = ref(false);
 
     const filterOpen = ref(false);
 
@@ -170,28 +173,21 @@ export default {
       currentPage.value = Math.min(currentPage.value + 1, totalPages.value);
     };
 
-    const loadDataAndStructure = async (table, offset) => {
+    const loadDataAndStructure = async (table, offset, filters = null) => {
       loading.value = true;
 
       try {
-        [structure.value, data.value] = await Promise.all([
-          callMain('fetchStructure', {
-            connectionId,
-            table: table.name
-          }),
-          callMain('fetchData', {
-            connectionId,
-            table: table.name,
-            options: {
-              limit: ROWS_PER_PAGE,
-              offset
-            }
-          })
-        ])
+        data.value = await callMain('fetchData', {
+          connectionId,
+          table: table.name,
+          options: {
+            limit: ROWS_PER_PAGE,
+            offset,
+            filters
+          }
+        });
       } catch (error) {
         console.error(error);
-        data.value = null;
-        structure.value = null;
       } finally {
         loading.value = false;
       }
@@ -209,9 +205,18 @@ export default {
 
     watchEffect(() => reset(props.table));
 
+    const applyFilter = (filters) => {
+      loadDataAndStructure(props.table, offset.value, filters);
+    }
+
+    watchEffect(() => {
+      if (!filterOpen.value) {
+        applyFilter(null);
+      }
+    });
+
     return {
       data,
-      structure,
       loading,
       currentPage,
       startRow,
@@ -219,7 +224,8 @@ export default {
       totalPages,
       previousPage,
       nextPage,
-      filterOpen
+      filterOpen,
+      applyFilter
     }
   }
 }

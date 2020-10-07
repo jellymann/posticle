@@ -15,7 +15,7 @@
       <div class="filter__actions-right">
         <button class="filter__button" @click="clearFilter">Clear Filter</button>
         <button class="filter__button">SQL Preview</button>
-        <button class="filter__button">Apply Filter</button>
+        <button class="filter__button" @click="applyFilter">Apply Filter</button>
       </div>
     </div>
   </div>
@@ -66,17 +66,18 @@ export default {
     FilterItem
   },
   props: {
-    columns: Array,
+    columns: Array
   },
-  setup() {
+  setup(props, { emit }) {
     const createFilter = () => {
-      return { column: 'foo', operator: 'bar', text: '' };
+      return { column: null, operator: null, text: '' };
     };
 
     const filters = ref([createFilter()]);
 
     const clearFilter = () => {
       filters.value = [createFilter()];
+      applyFilter();
     };
 
     const addFilter = (index) => {
@@ -94,11 +95,31 @@ export default {
       ];
     };
 
+    const emitFilters = computed(() => {
+      return filters.value
+        .filter(filter => { // remove invalid filters
+          if (filter.column === 'custom' && filter.text) return true;
+          if (!filter.column || !filter.operator) return false;
+          if (filter.operator.hasParameter && !filter.text) return false;
+          return true;
+        })
+        .map(filter => ({ // simplify filter objects to send to backend
+          column: typeof filter.column === 'string' ? filter.column : { name: filter.column.name },
+          operator: filter.operator ? filter.operator.id : null,
+          text: filter.text
+        }));
+    })
+
+    const applyFilter = () => {
+      emit('applyFilter', emitFilters.value);
+    }
+
     return {
       filters,
       clearFilter,
       addFilter,
-      removeFilter
+      removeFilter,
+      applyFilter
     };
   }
 }
