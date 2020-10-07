@@ -15,11 +15,15 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="column in structure.columns" :key="column.column_name">
-            <td>{{column.column_name}}</td>
-            <td>{{column.data_type}}</td>
-            <td>{{column.column_default}}</td>
-            <td>{{column.is_nullable === 'NO' ? 'NOT NULL' : ''}}</td>
+          <tr v-for="column in structure.columns" :key="column.name">
+            <td>{{column.name}}</td>
+            <td>{{column.type}}</td>
+            <td>{{column.defaultValue}}</td>
+            <td>
+              <span v-for="constraint in column.constraints" :key="constraint">
+                {{ constraint }}
+              </span>
+            </td>
           </tr>
         </tbody>
       </table>

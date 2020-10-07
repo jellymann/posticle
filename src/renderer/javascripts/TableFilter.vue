@@ -2,13 +2,7 @@
   <div class="filter">
     <ul class="filter__filters">
       <li v-for="(filter, index) in filters" :key="index" class="filter__filter">
-        <select class="filter__select">
-          <option v-for="column in columns" :key="column.column_name" :value="column.column_name">
-            {{column.column_name}}
-          </option>
-        </select>
-        <select class="filter__select"></select>
-        <input class="filter__input" v-model="filter.text" />
+        <filter-item :filter="filter" :columns="columns"></filter-item>
         <button class="filter__button" @click="removeFilter(index)" v-if="filters.length > 1"> - </button>
         <button class="filter__button" @click="addFilter(index)"> + </button>
       </li>
@@ -44,16 +38,6 @@
     margin-bottom: 0.5rem;
   }
 
-  &__select {
-    @include button;
-    margin-right: 0.5rem;
-  }
-
-  &__input {
-    flex-grow: 1;
-    margin-right: 0.5rem;
-  }
-
   &__actions {
     display: flex;
     justify-content: space-between;
@@ -74,9 +58,13 @@
 </style>
 
 <script>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import FilterItem from './FilterItem.vue';
 
 export default {
+  components: {
+    FilterItem
+  },
   props: {
     columns: Array,
   },
