@@ -3,6 +3,7 @@
     v-if="filterOpen && data"
     :columns="data.structure.columns"
     @applyFilter="applyFilter"
+    v-model="filters"
   />
   <div class="content">
     <div v-if="loading">Loading...</div>
@@ -129,7 +130,7 @@
 </style>
 
 <script>
-import { computed, inject, ref, watch, watchEffect } from 'vue';
+import { computed, inject, onMounted, ref, watch, watchEffect } from 'vue';
 import callMain from './callMain';
 import TableFilter from "./TableFilter.vue";
 
@@ -149,6 +150,7 @@ export default {
     const loading = ref(false);
 
     const filterOpen = ref(false);
+    const filters = ref(null);
 
     const currentPage = ref(1);
 
@@ -173,17 +175,17 @@ export default {
       currentPage.value = Math.min(currentPage.value + 1, totalPages.value);
     };
 
-    const loadDataAndStructure = async (table, offset, filters = null) => {
+    const loadDataAndStructure = async () => {
       loading.value = true;
 
       try {
         data.value = await callMain('fetchData', {
           connectionId,
-          table: table.name,
+          table: props.table.name,
           options: {
             limit: ROWS_PER_PAGE,
-            offset,
-            filters
+            offset: offset.value,
+            filters: JSON.parse(JSON.stringify(filters.value))
           }
         });
       } catch (error) {
@@ -193,26 +195,27 @@ export default {
       }
     }
 
-    watchEffect(() => {
-      loadDataAndStructure(props.table, offset.value);
-    });
+    watch(offset, loadDataAndStructure);
+    onMounted(loadDataAndStructure);
 
     const reset = () => {
       currentPage.value = 1;
       filterOpen.value = false;
+      filters.value = null;
       data.value = null;
+      loadDataAndStructure();
     }
 
-    watchEffect(() => reset(props.table));
+    watch(() => props.table, reset);
 
-    const applyFilter = (filters) => {
-      loadDataAndStructure(props.table, offset.value, filters);
+    const applyFilter = (newFilters) => {
+      currentPage.value = 1;
+      filters.value = newFilters;
+      loadDataAndStructure();
     }
 
-    watchEffect(() => {
-      if (!filterOpen.value) {
-        applyFilter(null);
-      }
+    watch(filterOpen, open => {
+      if (!open) applyFilter(null);
     });
 
     return {
@@ -225,7 +228,8 @@ export default {
       previousPage,
       nextPage,
       filterOpen,
-      applyFilter
+      applyFilter,
+      filters
     }
   }
 }
