@@ -1,6 +1,8 @@
 import { Client } from 'pg';
 import { v4 as uuid } from 'uuid';
 
+import buildWhereFromFilters from './buildWhereFromFilter';
+
 const CONNECTIONS = {};
 
 export default class PgConnection {
@@ -15,7 +17,7 @@ export default class PgConnection {
   }
 
   async fetchTables() {
-    let result = await this.client.query(`
+    let result = await this.query(`
       SELECT table_name, table_type
       FROM information_schema.tables
       WHERE table_schema = 'public'
@@ -28,18 +30,23 @@ export default class PgConnection {
     }));
   }
 
-  async fetchData(table, { offset = 0, limit = 1000 } = {}) {
-    let result = await this.client.query({
+  async fetchData(table, { offset = 0, limit = 1000, filters = null } = {}) {
+    let structure = await this.fetchStructure(table);
+
+    let where = buildWhereFromFilters(filters, structure);
+
+    let result = await this.query({
       text: `
-        SELECT COUNT(*) as count FROM ${table};
+        SELECT COUNT(*) as count FROM ${table} ${where};
       `
     });
 
     let count = result.rows[0].count;
 
-    result = await this.client.query({
+    result = await this.query({
       text: `
         SELECT * FROM ${table}
+        ${where}
         LIMIT $1
         OFFSET $2;
       `,
@@ -50,12 +57,13 @@ export default class PgConnection {
     return {
       fields: result.fields.map(field => field.name),
       rows: result.rows,
-      count
+      count,
+      structure
     };
   }
 
   async fetchStructure(table) {
-    let result = await this.client.query({
+    let result = await this.query({
       text: `
         SELECT c.column_name, c.data_type, c.column_default, c.is_nullable
         FROM information_schema.columns as c
@@ -83,6 +91,14 @@ export default class PgConnection {
         };
       })
     };
+  }
+
+  
+
+  query(...args) {
+    console.log("--- RUNNING QUERY ---");
+    console.log(args);
+    return this.client.query(...args);
   }
 
   /**
