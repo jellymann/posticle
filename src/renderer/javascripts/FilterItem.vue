@@ -1,6 +1,6 @@
 <template>
   <div class="filter-item">
-    <select class="filter-item__select" v-model="selectedColumn">
+    <select class="filter-item__select" v-model="filter.column">
       <option :value="'any'">Any column</option>
       <option disabled>-----</option>
       <option v-for="column in columns" :key="column.name" :value="column">
@@ -9,7 +9,7 @@
       <option disabled>-----</option>
       <option :value="'custom'">Custom SQL</option>
     </select>
-    <select v-if="operators !== null" class="filter-item__select" v-model="selectedOperator">
+    <select v-if="operators !== null" class="filter-item__select" v-model="filter.operator">
       <option
         v-for="operator in operators"
         :key="operator.name"
@@ -20,7 +20,7 @@
       </option>
     </select>
     <input
-      v-if="!selectedOperator || selectedOperator.hasParameter"
+      v-if="!filter.operator || filter.operator.hasParameter"
       class="filter-item__input"
       v-model="filter.text"
     />
@@ -49,49 +49,11 @@
 import { ref, computed } from 'vue';
 
 class Operator {
-  constructor({ name, hasParameter = true, isSelectable = true } = {}) {
+  constructor({ id, name, hasParameter = true, isSelectable = true }) {
+    this.id = id;
     this.name = name;
     this.hasParameter = hasParameter;
     this.isSelectable = isSelectable;
-  }
-}
-
-class BinaryOperator extends Operator {
-  constructor({ operator, ...options }) {
-    super(options);
-    this.operator = operator;
-  }
-
-  toSql(column, value) {
-    return `"${column.name}" ${this.operator} '${value}'`;
-  }
-}
-
-class UnaryOperator extends Operator {
-  constructor({ operator, ...options }) {
-    super({ hasParameter: false, ...options });
-    this.operator = operator;
-  }
-
-  toSql(column, value) {
-    return `"${column.name} ${this.operator}`;
-  }
-}
-
-class LikeOperator extends Operator {
-  constructor({ inverted = false, percentBefore = true, percentAfter = true, ...options }) {
-    super(options);
-    this.inverted = inverted;
-    this.percentBefore = percentBefore;
-    this.percentAfter = percentAfter;
-  }
-
-  toSql(column, value) {
-    op = this.inverted ? 'NOT ILIKE' : 'ILIKE';
-    p1 = this.percentBefore ? '%' : '';
-    p2 = this.percentAfter ? '%' : '';
-    typeCase = column.isStringish ? '' : '::TEXT';
-    return `"${column.name}"${typeCase} ${op} '${p1}${value}${p2}'`;
   }
 }
 
@@ -101,24 +63,24 @@ class OperatorSeparator extends Operator {
   }
 }
 
-const EqualsOp = new BinaryOperator({ name: '=', operator: '=' });
-const NotEqualsOp = new BinaryOperator({ name: "≠", operator: "<>" });
-const IsDistinctFromOp = new BinaryOperator({ name: "is distinct from", operator: "IS DISTINCT FROM" });
-const LessThanOp = new BinaryOperator({ name: "<", operator: "<" });
-const GreaterThanOp = new BinaryOperator({ name: ">", operator: ">" });
-const LessThanEqualOp = new BinaryOperator({ name: "≤", operator: "<=" });
-const GreaterThanEqualOp = new BinaryOperator({ name: "≥", operator: ">=" });
+const EqualsOp = new Operator({ name: '=', id: 'EqualsOp' });
+const NotEqualsOp = new Operator({ name: "≠", id: 'NotEqualsOp' });
+const IsDistinctFromOp = new Operator({ name: "is distinct from", id: 'IsDistinctFromOp' });
+const LessThanOp = new Operator({ name: "<", id: 'LessThanOp' });
+const GreaterThanOp = new Operator({ name: ">", id: 'GreaterThanOp' });
+const LessThanEqualOp = new Operator({ name: "≤", id: 'LessThanEqualOp' });
+const GreaterThanEqualOp = new Operator({ name: "≥", id: 'GreaterThanEqualOp' });
 
-const IsNullOp = new UnaryOperator({ name: "is NULL", operator: "IS NULL" });
-const IsNotNullOp = new UnaryOperator({ name: "is not NULL", operator: "IS NOT NULL" });
+const IsNullOp = new Operator({ name: "is NULL", hasParameter: false, id: 'IsNullOp' });
+const IsNotNullOp = new Operator({ name: "is not NULL", hasParameter: false, id: 'IsNotNullOp' });
 
-const ContainsOp = new LikeOperator({ name: "contains" });
-const NotContainsOp = new LikeOperator({ name: "does not contain", inverted: true });
-const IsExactlyOp = new BinaryOperator({ name: "is exactly", operator: "=" });
-const IsEmptyStringOp = new UnaryOperator({ name: "is empty string", operator: "= ''" });
-const BeginsWithOp = new LikeOperator({ name: "begins with", PercentBefore: false });
-const EndsWithOp = new LikeOperator({ name: "ends with", PercentAfter: false });
-const LikeOp = new LikeOperator({ name: "like", PercentBefore: false, PercentAfter: false });
+const ContainsOp = new Operator({ name: "contains", id: 'ContainsOp' });
+const NotContainsOp = new Operator({ name: "does not contain", id: 'NotContainsOp' });
+const IsExactlyOp = new Operator({ name: "is exactly", id: 'IsExactlyOp' });
+const IsEmptyStringOp = new Operator({ name: "is empty string", hasParameter: false, id: 'IsEmptyStringOp' });
+const BeginsWithOp = new Operator({ name: "begins with", id: 'BeginsWithOp' });
+const EndsWithOp = new Operator({ name: "ends with", id: 'EndsWithOp' });
+const LikeOp = new Operator({ name: "like", id: 'LikeOp' });
 
 const OpSeparator = new OperatorSeparator();
 
@@ -148,19 +110,19 @@ export default {
     columns: Array
   },
   setup(props) {
-    const selectedColumn = ref('any');
+    if (props.filter.column === null) {
+      props.filter.column = 'any';
+    }
+
     const operators = computed(() => {
-      if (selectedColumn.value === 'any') return AnyOperators;
-      if (selectedColumn.value === 'custom') return null;
-      if (selectedColumn.value.isStringish) return StringOperators;
+      if (props.filter.column === 'any') return AnyOperators;
+      if (props.filter.column === 'custom') return null;
+      if (props.filter.column && props.filter.column.isStringish) return StringOperators;
       return NumberOperators;
     });
-    const selectedOperator = ref(ContainsOp);
 
     return {
-      selectedColumn,
-      operators,
-      selectedOperator
+      operators
     }
   }
 }
