@@ -1,6 +1,6 @@
 <template>
+  <table-filter v-if="filterOpen" :columns="structure.columns"></table-filter>
   <div class="content">
-    <table-filter v-if="filterOpen" :columns="structure.columns"></table-filter>
     <div v-if="loading">Loading...</div>
     <table v-if="!loading && data" class="content__table">
       <thead>
