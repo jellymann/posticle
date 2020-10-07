@@ -66,7 +66,22 @@ export default class PgConnection {
     });
 
     return {
-      columns: result.rows
+      columns: result.rows.map(row => {
+        let constraints = [];
+
+        if (row.is_nullable) constraints.push('NOT NULL');
+
+        return {
+          name: row.column_name,
+          type: row.data_type,
+          defaultValue: row.column_default,
+          constraints,
+          isStringish:
+            row.data_type == "string" ||
+            row.data_type == "text" ||
+            row.data_type == "character varying"
+        };
+      })
     };
   }
 
