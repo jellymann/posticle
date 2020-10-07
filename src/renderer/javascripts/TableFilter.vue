@@ -58,7 +58,7 @@
 </style>
 
 <script>
-import { ref, computed } from 'vue';
+import { ref, computed, watchEffect } from 'vue';
 import FilterItem from './FilterItem.vue';
 
 export default {
@@ -66,14 +66,15 @@ export default {
     FilterItem
   },
   props: {
-    columns: Array
+    columns: Array,
+    modelValue: Array
   },
   setup(props, { emit }) {
     const createFilter = () => {
       return { column: null, operator: null, text: '' };
     };
 
-    const filters = ref([createFilter()]);
+    const filters = ref(props.modelValue || [createFilter()]);
 
     const clearFilter = () => {
       filters.value = [createFilter()];
@@ -113,6 +114,10 @@ export default {
     const applyFilter = () => {
       emit('applyFilter', emitFilters.value);
     }
+
+    watchEffect(() => {
+      emit('update:modelValue', emitFilters.value);
+    });
 
     return {
       filters,
