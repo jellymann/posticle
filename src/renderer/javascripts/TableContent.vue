@@ -1,6 +1,6 @@
 <template>
   <div class="content">
-    <table-filter v-if="filterOpen"></table-filter>
+    <table-filter v-if="filterOpen" :columns="structure.columns"></table-filter>
     <div v-if="loading">Loading...</div>
     <table v-if="!loading && data" class="content__table">
       <thead>
@@ -143,6 +143,7 @@ export default {
 
     const data = ref(null);
     const loading = ref(false);
+    const structure = ref(false);
 
     const filterOpen = ref(false);
 
@@ -169,28 +170,35 @@ export default {
       currentPage.value = Math.min(currentPage.value + 1, totalPages.value);
     };
 
-    const loadData = async (table, offset) => {
+    const loadDataAndStructure = async (table, offset) => {
       loading.value = true;
 
       try {
-        data.value = await callMain('fetchData', {
-          connectionId,
-          table: table.name,
-          options: {
-            limit: ROWS_PER_PAGE,
-            offset
-          }
-        });
+        [structure.value, data.value] = await Promise.all([
+          callMain('fetchStructure', {
+            connectionId,
+            table: table.name
+          }),
+          callMain('fetchData', {
+            connectionId,
+            table: table.name,
+            options: {
+              limit: ROWS_PER_PAGE,
+              offset
+            }
+          })
+        ])
       } catch (error) {
         console.error(error);
         data.value = null;
+        structure.value = null;
       } finally {
         loading.value = false;
       }
     }
 
     watchEffect(() => {
-      loadData(props.table, offset.value);
+      loadDataAndStructure(props.table, offset.value);
     });
 
     const reset = () => {
@@ -203,6 +211,7 @@ export default {
 
     return {
       data,
+      structure,
       loading,
       currentPage,
       startRow,
