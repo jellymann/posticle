@@ -7,7 +7,14 @@
       @dblclick="editCell(cell)"
     >
       <div class="cell__content">
-        <textarea class="cell__input" v-if="cell.isEditing" v-model="cell.value" @mousedown.stop @mousemove.stop />
+        <textarea
+          class="cell__input"
+          ref='input'
+          v-if="cell.isEditing"
+          v-model="cell.value"
+          @mousedown.stop
+          @mousemove.stop
+        />
         <div class="cell__value" v-else>{{cell.value}}</div>
       </div>
     </td>
@@ -61,6 +68,8 @@
 </style>
 
 <script>
+import { ref, nextTick } from 'vue';
+
 export default {
   props: {
     cells: Array,
@@ -68,6 +77,8 @@ export default {
     fields: Array
   },
   setup(props) {
+    const input = ref(null);
+
     const stopEditing = () => {
       props.cells.forEach(otherCell => {
         otherCell.isEditing = false;
@@ -91,14 +102,18 @@ export default {
       });
       cell.isEditing = true
 
-
       document.addEventListener('mousedown', stopEditing, false);
       document.addEventListener('keydown', cancelEditing, false);
+
+      nextTick(() => {
+        input.value.select();
+      });
     }
 
     return {
       ...props,
-      editCell
+      editCell,
+      input
     };
   }
 }
