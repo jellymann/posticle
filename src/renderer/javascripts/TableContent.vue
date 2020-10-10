@@ -16,11 +16,12 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(row, index) in data.rows" :key="index">
-          <td class="content__td" v-for="(cell, cellIndex) in row" :key="data.fields[cellIndex]">
-            {{cell}}
-          </td>
-        </tr>
+        <tr
+          v-for="(row, index) in data.rows"
+          v-is="'table-row'"
+          :key="index"
+          :row="row"
+          :fields="data.fields"></tr>
       </tbody>
     </table>
   </div>
@@ -81,21 +82,6 @@
       background-color: $panel-border-color;
     }
   }
-
-  &__td {
-    height: 3rem;
-    white-space: nowrap;
-    max-width: 300px;
-    overflow: hidden;
-    padding: 0.25rem 0.5rem;
-    border-bottom: $panel-border;
-    border-right: $panel-border;
-    text-overflow: ellipsis;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
-  }
 }
 
 .status-bar {
@@ -134,12 +120,13 @@
 import { computed, inject, onMounted, ref, watch, watchEffect } from 'vue';
 import callMain from './callMain';
 import TableFilter from "./TableFilter.vue";
+import TableRow from "./TableRow.vue";
 
 const ROWS_PER_PAGE = 1000;
 
 export default {
   components: {
-    TableFilter
+    TableFilter, TableRow
   },
   props: {
     table: Object
