@@ -17,11 +17,14 @@
       </thead>
       <tbody>
         <tr
-          v-for="(row, index) in data.rows"
+          v-for="(row, index) in rows"
           v-is="'table-row'"
           :key="index"
-          :row="row"
-          :fields="data.fields"></tr>
+          v-bind="row"
+          :fields="data.fields"
+          :isSelected="rowIsSelected(index)"
+          @mousedown.prevent="mouseDownOnRow(index)"
+          @mousemove.prevent="mouseMoveOnRow(index)"></tr>
       </tbody>
     </table>
   </div>
@@ -117,7 +120,7 @@
 </style>
 
 <script>
-import { computed, inject, onMounted, ref, watch, watchEffect } from 'vue';
+import { computed, inject, onMounted, ref, reactive, watch, watchEffect } from 'vue';
 import callMain from './callMain';
 import TableFilter from "./TableFilter.vue";
 import TableRow from "./TableRow.vue";
@@ -135,6 +138,7 @@ export default {
     const connectionId = inject('connectionId');
 
     const data = ref(null);
+    const rows = ref(null);
     const loading = ref(false);
 
     const filterOpen = ref(false);
@@ -176,6 +180,11 @@ export default {
             filters: JSON.parse(JSON.stringify(filters.value))
           }
         });
+        let newRows = data.value.rows.map(row => reactive({
+          isSelected: false,
+          cells: row
+        }));
+        rows.value = newRows;
       } catch (error) {
         console.error(error);
       } finally {
@@ -205,9 +214,40 @@ export default {
     watch(filterOpen, open => {
       if (!open) applyFilter(null);
     });
+    
+    let mouseIsDown = false;
+    let mouseDownOnIndex = null;
+
+    const selectedIndexStart = ref(-1);
+    const selectedIndexEnd = ref(-1);
+
+    const mouseDownOnRow = (index) => {
+      const mouseUp = (event) => {
+        event.preventDefault();
+        document.removeEventListener('mouseup', mouseUp);
+        mouseIsDown = false;
+      }
+      document.addEventListener('mouseup', mouseUp, false);
+
+      mouseIsDown = true;
+      mouseDownOnIndex = index;
+      selectedIndexStart.value = index;
+      selectedIndexEnd.value = index;
+    }
+
+    const mouseMoveOnRow = (index) => {
+      if (!mouseIsDown) return;
+      selectedIndexStart.value = Math.min(index, mouseDownOnIndex);
+      selectedIndexEnd.value = Math.max(index, mouseDownOnIndex);
+    }
+
+    const rowIsSelected = (index) => {
+      return index >= selectedIndexStart.value && index <= selectedIndexEnd.value;
+    }
 
     return {
       data,
+      rows,
       loading,
       currentPage,
       startRow,
@@ -217,8 +257,14 @@ export default {
       nextPage,
       filterOpen,
       applyFilter,
-      filters
+      filters,
+      mouseDownOnRow,
+      mouseMoveOnRow,
+      selectedIndexStart,
+      selectedIndexEnd,
+      rowIsSelected
     }
   }
 }
 </script>
+

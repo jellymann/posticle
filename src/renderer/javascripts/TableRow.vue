@@ -1,6 +1,6 @@
 <template>
-  <tr>
-    <td v-for="(cell, cellIndex) in row" :key="fields[cellIndex]">
+  <tr :class="{ 'is-selected': isSelected }">
+    <td v-for="(cell, cellIndex) in cells" :key="fields[cellIndex]">
       {{cell}}
     </td>
   </tr>
@@ -16,13 +16,19 @@ td {
   border-bottom: $panel-border;
   border-right: $panel-border;
   text-overflow: ellipsis;
+
+  .is-selected & {
+    background-color: $highlight-background;
+    color: $highlight-foreground;
+  }
 }
 </style>
 
 <script>
 export default {
   props: {
-    row: Array,
+    cells: Array,
+    isSelected: Boolean,
     fields: Array
   },
   setup(props) {
