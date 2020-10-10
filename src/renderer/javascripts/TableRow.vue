@@ -1,21 +1,48 @@
 <template>
   <tr :class="{ 'is-selected': isSelected }">
-    <td v-for="(cell, cellIndex) in cells" :key="fields[cellIndex]">
-      {{cell}}
+    <td class="cell" v-for="(cell, cellIndex) in cells" :key="fields[cellIndex]" @dblclick="editCell(cell)">
+      <div class="cell__content">
+        <textarea class="cell__input" v-if="cell.isEditing" v-model="cell.value" @mousedown.stop @mousemove.stop />
+        <div class="cell__value" v-else>{{cell.value}}</div>
+      </div>
     </td>
   </tr>
 </template>
 
 <style lang="scss" scoped>
-td {
+.cell {
   height: 3rem;
-  white-space: nowrap;
   max-width: 300px;
-  overflow: hidden;
-  padding: 0.25rem 0.5rem;
   border-bottom: $panel-border;
   border-right: $panel-border;
-  text-overflow: ellipsis;
+
+  &__content {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+  }
+
+  &__value {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  &__value, &__input {
+    width: 100%;
+    padding: 0 0.5rem;
+  }
+
+  &__input {
+    height: 100%;
+    border: 0;
+    resize: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
 
   .is-selected & {
     background-color: $highlight-background;
@@ -32,8 +59,26 @@ export default {
     fields: Array
   },
   setup(props) {
+    const stopEditing = () => {
+      props.cells.forEach(otherCell => {
+        otherCell.isEditing = false;
+      });
+      document.removeEventListener('mousedown', stopEditing);
+    }
+
+    const editCell = (cell) => {
+      props.cells.forEach(otherCell => {
+        otherCell.isEditing = false;
+      });
+      cell.isEditing = true
+
+
+      document.addEventListener('mousedown', stopEditing, false);
+    }
+
     return {
-      ...props
+      ...props,
+      editCell
     };
   }
 }

@@ -18,3 +18,8 @@ body {
 option {
   background-color: white;
 }
+
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+}

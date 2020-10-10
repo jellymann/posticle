@@ -182,7 +182,7 @@ export default {
         });
         let newRows = data.value.rows.map(row => reactive({
           isSelected: false,
-          cells: row
+          cells: row.map(cell => ({ value: cell }))
         }));
         rows.value = newRows;
       } catch (error) {
