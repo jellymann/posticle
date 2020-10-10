@@ -86,10 +86,11 @@
     height: 3rem;
     white-space: nowrap;
     max-width: 300px;
-    overflow-x: auto;
+    overflow: hidden;
     padding: 0.25rem 0.5rem;
     border-bottom: $panel-border;
     border-right: $panel-border;
+    text-overflow: ellipsis;
 
     &::-webkit-scrollbar {
       display: none;
