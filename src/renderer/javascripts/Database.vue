@@ -3,13 +3,13 @@
     <div class="nav">
     </div>
     <div class="main">
-      <div class="left">
+      <div class="main__left">
         <schema v-model="currentTable" />
       </div>
-      <div class="content">
+      <div class="main__content">
         <table-view :table="currentTable" v-if="currentTable" />
       </div>
-      <div class="right"></div>
+      <div class="main__right"></div>
     </div>
   </div>
 </template>
@@ -32,29 +32,29 @@
   display: flex;
   flex: 1 1 auto;
   min-height: 0;
-}
 
-.left {
-  width: 16rem;
-  flex-shrink: 0;
-  background: $panel-background;
-  border-right: $panel-border;
-  overflow-x: hidden;
-  overflow-y: auto;
-}
+  &__left {
+    width: 16rem;
+    flex-shrink: 0;
+    background: $panel-background;
+    border-right: $panel-border;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
 
-.right {
-  width: 16rem;
-  flex-shrink: 0;
-  background: $panel-background;
-  border-left: $panel-border;
-}
+  &__right {
+    width: 16rem;
+    flex-shrink: 0;
+    background: $panel-background;
+    border-left: $panel-border;
+  }
 
-.content {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+  &__content {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
 }
 </style>
 
