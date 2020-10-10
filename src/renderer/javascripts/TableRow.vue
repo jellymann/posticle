@@ -1,6 +1,11 @@
 <template>
   <tr :class="{ 'is-selected': isSelected }">
-    <td class="cell" v-for="(cell, cellIndex) in cells" :key="fields[cellIndex]" @dblclick="editCell(cell)">
+    <td
+      :class="{ cell:true, 'cell--is-edited': cell.value !== cell.originalValue }"
+      v-for="(cell, cellIndex) in cells"
+      :key="fields[cellIndex]"
+      @dblclick="editCell(cell)"
+    >
       <div class="cell__content">
         <textarea class="cell__input" v-if="cell.isEditing" v-model="cell.value" @mousedown.stop @mousemove.stop />
         <div class="cell__value" v-else>{{cell.value}}</div>
@@ -15,6 +20,10 @@
   max-width: 300px;
   border-bottom: $panel-border;
   border-right: $panel-border;
+
+  &--is-edited {
+    background: $edited-background;
+  }
 
   &__content {
     display: flex;
@@ -64,6 +73,16 @@ export default {
         otherCell.isEditing = false;
       });
       document.removeEventListener('mousedown', stopEditing);
+      document.removeEventListener('keydown', cancelEditing);
+    }
+
+    const cancelEditing = (event) => {
+      if (event.key !== 'Escape') return;
+      props.cells.forEach(cell => {
+        if (cell.isEditing) cell.value = cell.originalValue;
+        cell.isEditing = false;
+      });
+      stopEditing();
     }
 
     const editCell = (cell) => {
@@ -74,6 +93,7 @@ export default {
 
 
       document.addEventListener('mousedown', stopEditing, false);
+      document.addEventListener('keydown', cancelEditing, false);
     }
 
     return {
