@@ -74,6 +74,7 @@
     height: 2rem;
     padding: 0.25rem 0.5rem;
     text-align: left;
+    z-index: 1;
 
     &::after {
       position: absolute;
