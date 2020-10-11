@@ -35,7 +35,7 @@ describe('PgConnection', () => {
       let changes = {
         schema: 'public',
         table: 'foo',
-        deletes: [{ row: { key: 1234 } }, { row: { key: 2345 } }]
+        deletes: [{ key: 1234 }, { key: 2345 }]
       }
 
       let sql = new PgConnection().generateChangeQuery(changes, ID_SCTRUCTURE);
@@ -81,7 +81,7 @@ describe('PgConnection', () => {
           row: { key: 1234 },
           changes: { bar: 'baz' }
         }],
-        deletes: [{ row: { key: 1234 } }, { row: { key: 2345 } }],
+        deletes: [{ key: 1234 }, { key: 2345 }],
         inserts: [
           { bar: 'A', baz: 'B' },
           { bar: 'C', baz: 'D' }
@@ -105,8 +105,8 @@ describe('PgConnection', () => {
           changes: { baz: 'W' }
         }],
         deletes: [
-          { row: { bar: 'B', baz: 'Y' } },
-          { row: { bar: 'C', baz: 'X' } }
+          { bar: 'B', baz: 'Y' },
+          { bar: 'C', baz: 'X' }
         ]
       }
 
