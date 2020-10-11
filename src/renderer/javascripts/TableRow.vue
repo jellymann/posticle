@@ -2,8 +2,8 @@
   <tr :class="{ 'is-selected': isSelected }">
     <td
       :class="{ cell:true, 'cell--is-edited': cell.value !== cell.originalValue }"
-      v-for="(cell, cellIndex) in cells"
-      :key="fields[cellIndex]"
+      v-for="cell in cells"
+      :key="cell.column"
       @dblclick="editCell(cell)"
     >
       <div class="cell__content">
@@ -79,16 +79,16 @@ import { ref, nextTick } from 'vue';
 export default {
   props: {
     cells: Array,
-    isSelected: Boolean,
-    fields: Array
+    isSelected: Boolean
   },
-  setup(props) {
+  setup(props, { emit }) {
     const input = ref(null);
 
     const stopEditing = () => {
       props.cells.forEach(otherCell => {
         otherCell.isEditing = false;
       });
+      emit('finishEdit');
       document.removeEventListener('mousedown', stopEditing);
       document.removeEventListener('keydown', cancelEditing);
     }

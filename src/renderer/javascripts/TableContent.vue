@@ -21,12 +21,16 @@
           v-is="'table-row'"
           :key="index"
           v-bind="row"
-          :fields="data.fields"
           :isSelected="rowIsSelected(index)"
           @mousedown.prevent="mouseDownOnRow(index)"
-          @mousemove.prevent="mouseMoveOnRow(index)"></tr>
+          @mousemove.prevent="mouseMoveOnRow(index)"
+          @finishEdit="finishEditRow(row, index)"></tr>
       </tbody>
     </table>
+  </div>
+
+  <div v-if="hasChanges" class="changes-bar">
+    <button class="changes-bar__button" @click="performChanges">Save Changes</button>
   </div>
 
   <div class="status-bar">
@@ -167,6 +171,15 @@ export default {
     const nextPage = () => {
       currentPage.value = Math.min(currentPage.value + 1, totalPages.value);
     };
+    
+    let mouseIsDown = false;
+    let mouseDownOnIndex = null;
+
+    const selectedIndexStart = ref(-1);
+    const selectedIndexEnd = ref(-1);
+    
+    const rowsWithChanges = reactive({});
+    const hasChanges = computed(() => Object.keys(rowsWithChanges).length > 0);
 
     const loadDataAndStructure = async () => {
       loading.value = true;
@@ -182,9 +195,17 @@ export default {
           }
         });
         let newRows = data.value.rows.map(row => reactive({
-          cells: row.map(cell => ({ value: cell, originalValue: cell }))
+          cells: row.map((cell, index) => ({
+            value: cell,
+            originalValue: cell,
+            column: data.value.fields[index]
+          }))
         }));
         rows.value = newRows;
+        // clear out changes
+        for (let x in rowsWithChanges) delete rowsWithChanges[x];
+        selectedIndexStart.value = -1;
+        selectedIndexEnd.value = -1;
       } catch (error) {
         console.error(error);
       } finally {
@@ -214,12 +235,6 @@ export default {
     watch(filterOpen, open => {
       if (!open) applyFilter(null);
     });
-    
-    let mouseIsDown = false;
-    let mouseDownOnIndex = null;
-
-    const selectedIndexStart = ref(-1);
-    const selectedIndexEnd = ref(-1);
 
     const mouseDownOnRow = (index) => {
       const mouseUp = (event) => {
@@ -245,6 +260,63 @@ export default {
       return index >= selectedIndexStart.value && index <= selectedIndexEnd.value;
     }
 
+    const finishEditRow = (row, index) => {
+      if (!row.isNew && row.cells.every(({ value, originalValue }) => value === originalValue)) {
+        if (rowsWithChanges[index] && rowsWithChanges[index].type === 'update') {
+          delete rowsWithChanges[index];
+        }
+      } else {
+        rowsWithChanges[index] = row.isNew ? {
+          type: 'insert',
+          change: row.cells
+            .filter(({ value }) => value)
+            .reduce((a, b) => ({ ...a, [b.column]: b.value }), {})
+        } : {
+          type: 'update',
+          change: {
+            row: row.cells.reduce((a, b) => ({ ...a, [b.column]: b.originalValue }), {}),
+            changes: row.cells
+              .filter(({ value, originalValue }) => value !== originalValue)
+              .reduce((a, b) => ({ ...a, [b.column]: b.value || null }), {})
+          }
+        }
+      }
+    };
+
+    const performChanges = async () => {
+      let updates = [];
+      let deletes = [];
+      let inserts = [];
+
+      Object.entries(rowsWithChanges).forEach(([index, { type, change }]) => {
+        let array;
+        switch (type) {
+        case 'update':
+          array = updates;
+          break;
+        case 'delete':
+          array = deletes;
+          break;
+        case 'insert':
+          array = inserts;
+          break;
+        }
+        array.push(JSON.parse(JSON.stringify(change)));
+      });
+
+      loading.value = true;
+      let m = {
+        connectionId,
+        schema: 'public',
+        table: props.table.name,
+        updates,
+        deletes,
+        inserts
+      }
+      await callMain('performChanges', m);
+      loadDataAndStructure();
+    }
+
     return {
       data,
       rows,
@@ -262,9 +334,11 @@ export default {
       mouseMoveOnRow,
       selectedIndexStart,
       selectedIndexEnd,
-      rowIsSelected
+      rowIsSelected,
+      hasChanges,
+      finishEditRow,
+      performChanges
     }
   }
 }
 </script>
-
