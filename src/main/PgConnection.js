@@ -43,10 +43,14 @@ export default class PgConnection {
 
     let count = result.rows[0].count;
 
+    let orderBy = 'ctid';
+    if (structure.primaryKey) orderBy = structure.primaryKey;
+
     result = await this.query({
       text: `
         SELECT * FROM ${table}
         ${where}
+        ORDER BY "${orderBy}" ASC
         LIMIT $1
         OFFSET $2;
       `,
