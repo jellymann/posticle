@@ -14,7 +14,7 @@
           v-model="cell.value"
           @mousedown.stop
           @mousemove.stop
-          @keydown.stop
+          @keydown.stop="handleKeyDown"
         />
         <div class="cell__value" v-else>{{cell.value}}</div>
       </div>
@@ -97,16 +97,19 @@ export default {
       });
       emit('finishEdit');
       document.removeEventListener('mousedown', stopEditing);
-      document.removeEventListener('keydown', cancelEditing);
     }
 
-    const cancelEditing = (event) => {
-      if (event.key !== 'Escape') return;
-      props.cells.forEach(cell => {
-        if (cell.isEditing) cell.value = cell.originalValue;
-        cell.isEditing = false;
-      });
-      stopEditing();
+    const handleKeyDown = (event) => {
+      switch (event.key) {
+      case 'Escape':
+        props.cells.forEach(cell => {
+          if (cell.isEditing) cell.value = cell.originalValue;
+          cell.isEditing = false;
+        });
+      case 'Enter':
+        stopEditing();
+        break;
+      }
     }
 
     const editCell = (cell) => {
@@ -116,7 +119,6 @@ export default {
       cell.isEditing = true
 
       document.addEventListener('mousedown', stopEditing, false);
-      document.addEventListener('keydown', cancelEditing, false);
 
       nextTick(() => {
         input.value.select();
@@ -135,7 +137,8 @@ export default {
       ...props,
       editCell,
       input,
-      hidden
+      hidden,
+      handleKeyDown
     };
   }
 }
