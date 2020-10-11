@@ -30,7 +30,9 @@
   </div>
 
   <div v-if="hasChanges" class="changes-bar">
-    <button class="changes-bar__button" @click="performChanges">Save Changes</button>
+    <div class="changes-bar__right">
+      <button class="changes-bar__button" @click="performChanges">Save Changes</button>
+    </div>
   </div>
 
   <div class="status-bar">
@@ -89,6 +91,20 @@
       height: $panel-border-width;
       background-color: $panel-border-color;
     }
+  }
+}
+
+.changes-bar {
+  display: flex;
+  background-color: $edited-background;
+  padding: 0.5rem 1rem;
+
+  &__right {
+    margin-left: auto;
+  }
+
+  &__button {
+    @include button;
   }
 }
 
