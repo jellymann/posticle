@@ -14,6 +14,7 @@
           v-model="cell.value"
           @mousedown.stop
           @mousemove.stop
+          @keydown.stop
         />
         <div class="cell__value" v-else>{{cell.value}}</div>
       </div>
