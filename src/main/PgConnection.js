@@ -177,8 +177,16 @@ export default class PgConnection {
 
   identifyConditions(row, structure) {
     if (structure.primaryKey) return `"${structure.primaryKey}"=${row[structure.primaryKey]}`;
-    let rowConditions = Object.entries(row).map(([col, value]) => `"${col}"='${value}'`).join(' AND ');
+    let rowConditions = Object.entries(row).map(([col, value]) => this.columnEqualsValue(col, value)).join(' AND ');
     return `ctid IN (SELECT ctid FROM "${structure.schema}"."${structure.table}" WHERE ${rowConditions} LIMIT 1 FOR UPDATE)`;
+  }
+
+  columnEqualsValue(col, value) {
+    if (!value) {
+      return `"${col}" IS NULL`;
+    } else {
+      return `"${col}"='${value}'`;
+    }
   }
 
   query(...args) {
