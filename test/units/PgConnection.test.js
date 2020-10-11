@@ -106,7 +106,7 @@ describe('PgConnection', () => {
         }],
         deletes: [
           { bar: 'B', baz: 'Y' },
-          { bar: 'C', baz: 'X' }
+          { bar: 'C', baz: null }
         ]
       }
 
@@ -117,7 +117,7 @@ describe('PgConnection', () => {
         ` WHERE ctid IN (SELECT ctid FROM "public"."foo" WHERE "bar"='A' AND "baz"='Z' LIMIT 1 FOR UPDATE);\n` +
         `DELETE FROM "public"."foo"`+
         ` WHERE ctid IN (SELECT ctid FROM "public"."foo" WHERE "bar"='B' AND "baz"='Y' LIMIT 1 FOR UPDATE)` +
-        ` OR ctid IN (SELECT ctid FROM "public"."foo" WHERE "bar"='C' AND "baz"='X' LIMIT 1 FOR UPDATE);`);
+        ` OR ctid IN (SELECT ctid FROM "public"."foo" WHERE "bar"='C' AND "baz" IS NULL LIMIT 1 FOR UPDATE);`);
     });
   });
 });
