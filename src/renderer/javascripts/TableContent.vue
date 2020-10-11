@@ -5,9 +5,9 @@
     @applyFilter="applyFilter"
     v-model="filters"
   />
-  <div class="content">
+  <div class="content" ref="contentEl">
     <div v-if="loading">Loading...</div>
-    <table v-if="!loading && data" class="content__table">
+    <table v-if="!loading && data" class="content__table" ref="tableEl">
       <thead>
         <tr>
           <th class="content__th" v-for="field in data.fields" :key="field.name">
@@ -146,7 +146,7 @@
 </style>
 
 <script>
-import { computed, inject, onMounted, ref, reactive, watch, watchEffect, onBeforeUnmount } from 'vue';
+import { computed, inject, onMounted, ref, reactive, watch, watchEffect, onBeforeUnmount, nextTick } from 'vue';
 import callMain from './callMain';
 import TableFilter from "./TableFilter.vue";
 import TableRow from "./TableRow.vue";
@@ -203,6 +203,9 @@ export default {
     const hasChanges = computed(() => Object.keys(rowsWithChanges).length > 0);
 
     let firstInsert = -1;
+
+    const contentEl = ref(null);
+    const tableEl = ref(null);
 
     const loadDataAndStructure = async () => {
       loading.value = true;
@@ -406,6 +409,10 @@ export default {
         type: 'insert',
         change: {}
       };
+
+      nextTick(() => {
+        contentEl.value.scrollTop = tableEl.value.scrollHeight;
+      });
     };
 
     return {
@@ -430,7 +437,9 @@ export default {
       finishEditRow,
       performChanges,
       discardChanges,
-      newRow
+      newRow,
+      contentEl,
+      tableEl
     }
   }
 }
