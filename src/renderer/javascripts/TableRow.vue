@@ -79,7 +79,7 @@
 </style>
 
 <script>
-import { ref, nextTick, computed } from 'vue';
+import { ref, nextTick, computed, onMounted } from 'vue';
 
 export default {
   props: {
@@ -124,6 +124,12 @@ export default {
     }
 
     const hidden = computed(() => props.isNew && props.markForDelete);
+
+    onMounted(() => {
+      if (props.isNew) {
+        editCell(props.cells[0]);
+      }
+    });
 
     return {
       ...props,
