@@ -28,6 +28,10 @@
   border-bottom: $panel-border;
   border-right: $panel-border;
 
+  &--is-edited {
+    background: $edited-background;
+  }
+
   &__content {
     display: flex;
     width: 100%;
