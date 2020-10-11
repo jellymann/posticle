@@ -30,6 +30,9 @@
   </div>
 
   <div v-if="hasChanges" class="changes-bar">
+    <div class="changes-bar__left">
+      <button class="changes-bar__button" @click="discardChanges">Discard Changes</button>
+    </div>
     <div class="changes-bar__right">
       <button class="changes-bar__button" @click="performChanges">Save Changes</button>
     </div>
@@ -349,10 +352,29 @@ export default {
 
     onMounted(() => {
       document.addEventListener('keydown', deletePress, false);
-    })
+    });
     onBeforeUnmount(() => {
       document.removeEventListener('keydown', deletePress);
-    })
+    });
+
+    const discardChanges = () => {
+      selectedIndexStart.value = -1;
+      selectedIndexEnd.value = -1;
+      Object.entries(rowsWithChanges).forEach(([index, { type, change }]) => {
+        let row = rows.value[index];
+        switch (type) {
+        case 'update':
+        case 'delete':
+          row.cells.forEach(cell => cell.value = cell.originalValue);
+          row.markForDelete = false;
+          break;
+        case 'insert':
+          row.values.splice(index, 1);
+          break;
+        }
+      });
+      for (let x in rowsWithChanges) delete rowsWithChanges[x];
+    };
 
     return {
       data,
@@ -374,7 +396,8 @@ export default {
       rowIsSelected,
       hasChanges,
       finishEditRow,
-      performChanges
+      performChanges,
+      discardChanges
     }
   }
 }
