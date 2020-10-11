@@ -41,6 +41,9 @@
   <div class="status-bar">
     <div class="status-bar__left">
       <slot></slot>
+      <button v-if="data" class="status-bar__button status-bar__new-row" @click="newRow">
+        + Row
+      </button>
     </div>
     <div v-if="data" class="status-bar__center">{{ startRow }} - {{ endRow }} of {{ data.count }}</div>
     <div v-if="data" class="status-bar__right">
@@ -104,14 +107,14 @@
   &__right {
     margin-left: auto;
   }
-
-  &__button {
-    @include button;
-  }
 }
 
 .status-bar {
   @include status-bar;
+
+  &__new-row {
+    margin-left: 0.5rem;
+  }
 }
 
 .filter-button {
@@ -198,6 +201,8 @@ export default {
     
     const rowsWithChanges = reactive({});
     const hasChanges = computed(() => Object.keys(rowsWithChanges).length > 0);
+
+    let firstInsert = -1;
 
     const loadDataAndStructure = async () => {
       loading.value = true;
@@ -322,7 +327,6 @@ export default {
         array.push(JSON.parse(JSON.stringify(change)));
       });
 
-      loading.value = true;
       let m = {
         connectionId,
         schema: 'public',
@@ -331,7 +335,12 @@ export default {
         deletes,
         inserts
       }
-      await callMain('performChanges', m);
+      try {
+        await callMain('performChanges', m);
+      } catch (e) {
+        alert(e.message);
+        return;
+      }
       loadDataAndStructure();
     }
 
@@ -342,11 +351,18 @@ export default {
       for (let i = selectedIndexStart.value; i <= selectedIndexEnd.value; i++) {
         let row = rows.value[i];
         row.markForDelete = true;
-        rowsWithChanges[i] = {
-          type: 'delete',
-          change: row.cells.reduce((a, b) => ({ ...a, [b.column]: b.originalValue }), {})
-        };
+        if (row.isNew) {
+          delete rowsWithChanges[i];
+        } else {
+          rowsWithChanges[i] = {
+            type: 'delete',
+            change: row.cells.reduce((a, b) => ({ ...a, [b.column]: b.originalValue }), {})
+          };
+        }
       }
+
+      selectedIndexStart.value = -1;
+      selectedIndexEnd.value = -1;
     };
 
     onMounted(() => {
@@ -367,12 +383,29 @@ export default {
           row.cells.forEach(cell => cell.value = cell.originalValue);
           row.markForDelete = false;
           break;
-        case 'insert':
-          row.values.splice(index, 1);
-          break;
         }
       });
+      if (firstInsert !== -1) {
+        rows.value.length = parseInt(firstInsert, 10);
+      }
       for (let x in rowsWithChanges) delete rowsWithChanges[x];
+    };
+
+    const newRow = () => {
+      let newIndex = rows.value.length;
+      if (firstInsert === -1) firstInsert = newIndex;
+      rows.value.push(reactive({
+        isNew: true,
+        cells: data.value.fields.map(field => ({
+          value: null,
+          originalValue: null,
+          column: field
+        }))
+      }));
+      rowsWithChanges[newIndex] = {
+        type: 'insert',
+        change: {}
+      };
     };
 
     return {
@@ -396,7 +429,8 @@ export default {
       hasChanges,
       finishEditRow,
       performChanges,
-      discardChanges
+      discardChanges,
+      newRow
     }
   }
 }

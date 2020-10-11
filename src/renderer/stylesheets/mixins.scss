@@ -32,4 +32,8 @@
   &__left, &__right {
     display: flex;
   }
+
+  &__button {
+    @include button;
+  }
 }

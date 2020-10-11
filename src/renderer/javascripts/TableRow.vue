@@ -1,5 +1,5 @@
 <template>
-  <tr :class="{ 'is-selected': isSelected, 'is-deleted': markForDelete }">
+  <tr v-show="!hidden" :class="{ 'is-selected': isSelected, 'is-deleted': markForDelete }">
     <td
       :class="{ cell:true, 'cell--is-edited': cell.value !== cell.originalValue }"
       v-for="cell in cells"
@@ -79,12 +79,13 @@
 </style>
 
 <script>
-import { ref, nextTick } from 'vue';
+import { ref, nextTick, computed } from 'vue';
 
 export default {
   props: {
     cells: Array,
     markForDelete: Boolean,
+    isNew: Boolean,
     isSelected: Boolean
   },
   setup(props, { emit }) {
@@ -122,10 +123,13 @@ export default {
       });
     }
 
+    const hidden = computed(() => props.isNew && props.markForDelete);
+
     return {
       ...props,
       editCell,
-      input
+      input,
+      hidden
     };
   }
 }
