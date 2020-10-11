@@ -1,5 +1,5 @@
 <template>
-  <tr :class="{ 'is-selected': isSelected }">
+  <tr :class="{ 'is-selected': isSelected, 'is-deleted': markForDelete }">
     <td
       :class="{ cell:true, 'cell--is-edited': cell.value !== cell.originalValue }"
       v-for="cell in cells"
@@ -27,10 +27,6 @@
   max-width: 300px;
   border-bottom: $panel-border;
   border-right: $panel-border;
-
-  &--is-edited {
-    background: $edited-background;
-  }
 
   &__content {
     display: flex;
@@ -70,6 +66,10 @@
     background-color: $highlight-background;
     color: $highlight-foreground;
   }
+
+  .is-deleted & {
+    background: $deleted-background;
+  }
 }
 </style>
 
@@ -79,6 +79,7 @@ import { ref, nextTick } from 'vue';
 export default {
   props: {
     cells: Array,
+    markForDelete: Boolean,
     isSelected: Boolean
   },
   setup(props, { emit }) {

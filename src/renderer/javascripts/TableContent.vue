@@ -125,7 +125,7 @@
 </style>
 
 <script>
-import { computed, inject, onMounted, ref, reactive, watch, watchEffect } from 'vue';
+import { computed, inject, onMounted, ref, reactive, watch, watchEffect, onBeforeUnmount } from 'vue';
 import callMain from './callMain';
 import TableFilter from "./TableFilter.vue";
 import TableRow from "./TableRow.vue";
@@ -316,6 +316,27 @@ export default {
       await callMain('performChanges', m);
       loadDataAndStructure();
     }
+
+    const deletePress = (event) => {
+      if (event.key !== 'Delete' && event.key !== 'Backspace') return;
+      if (selectedIndexStart.value === -1 || selectedIndexEnd.value === -1) return;
+
+      for (let i = selectedIndexStart.value; i <= selectedIndexEnd.value; i++) {
+        let row = rows.value[i];
+        row.markForDelete = true;
+        rowsWithChanges[i] = {
+          type: 'delete',
+          change: row.cells.reduce((a, b) => ({ ...a, [b.column]: b.originalValue }), {})
+        };
+      }
+    };
+
+    onMounted(() => {
+      document.addEventListener('keydown', deletePress, false);
+    })
+    onBeforeUnmount(() => {
+      document.removeEventListener('keydown', deletePress);
+    })
 
     return {
       data,

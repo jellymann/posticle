@@ -156,7 +156,7 @@ export default class PgConnection {
   generateDeleteQuery(deletes, structure) {
     if (!deletes || deletes.length === 0) return null;
 
-    let where = deletes.map(({ row }) => this.identifyConditions(row, structure))
+    let where = deletes.map(row => this.identifyConditions(row, structure))
       .join(' OR ');
 
     return `DELETE FROM "${structure.schema}"."${structure.table}" WHERE ${where};`;
