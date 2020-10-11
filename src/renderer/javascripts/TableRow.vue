@@ -99,6 +99,11 @@ export default {
       document.removeEventListener('mousedown', stopEditing);
     }
 
+    const focusInput = () => {
+      input.value.scrollIntoViewIfNeeded(false);
+      input.value.select();
+    }
+
     const handleKeyDown = (event) => {
       switch (event.key) {
       case 'Escape':
@@ -107,6 +112,24 @@ export default {
           cell.isEditing = false;
         });
       case 'Enter':
+        event.preventDefault();
+        stopEditing();
+        break;
+      case 'Tab':
+        event.preventDefault();
+        let editNext = false;
+        for (let i = 0; i < props.cells.length; i++) {
+          if (props.cells[i].isEditing) {
+            props.cells[i].isEditing = false;
+            editNext = true;
+            continue;
+          }
+          if (editNext) {
+            props.cells[i].isEditing = true;
+            nextTick(focusInput);
+            return;
+          }
+        }
         stopEditing();
         break;
       }
@@ -120,9 +143,7 @@ export default {
 
       document.addEventListener('mousedown', stopEditing, false);
 
-      nextTick(() => {
-        input.value.select();
-      });
+      nextTick(focusInput);
     }
 
     const hidden = computed(() => props.isNew && props.markForDelete);
