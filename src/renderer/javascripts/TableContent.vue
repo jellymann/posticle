@@ -98,9 +98,8 @@
 }
 
 .changes-bar {
-  display: flex;
+  @include status-bar;
   background-color: $edited-background;
-  padding: 0.5rem 1rem;
 
   &__right {
     margin-left: auto;
