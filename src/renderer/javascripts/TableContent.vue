@@ -213,7 +213,7 @@ export default {
       try {
         data.value = await callMain('fetchData', {
           connectionId,
-          table: props.table.name,
+          table: { ...props.table },
           options: {
             limit: ROWS_PER_PAGE,
             offset: offset.value,
@@ -332,8 +332,7 @@ export default {
 
       let m = {
         connectionId,
-        schema: 'public',
-        table: props.table.name,
+        table: { ...props.table },
         updates,
         deletes,
         inserts

@@ -17,6 +17,16 @@ export default class PgConnection {
   }
 
   async fetchTables() {
+    let publicTables = await this.fetchPublicTables();
+    let otherTables = await this.fetchOtherTables();
+
+    return {
+      publicTables: publicTables,
+      otherSchemas: otherTables
+    };
+  }
+
+  async fetchPublicTables() {
     let result = await this.query(`
       SELECT table_name, table_type
       FROM information_schema.tables
@@ -26,8 +36,36 @@ export default class PgConnection {
 
     return result.rows.map(row => ({
       name: row.table_name,
-      type: row.table_type
+      type: row.table_type,
+      schema: 'public'
     }));
+  }
+
+  async fetchOtherTables() {
+    let result = await this.query(`
+      SELECT table_schema, table_name, table_type
+      FROM information_schema.tables
+      WHERE table_schema != 'public'
+      ORDER BY table_schema, table_name
+    `);
+
+    let schemas = [];
+
+    result.rows.forEach(row => {
+      let schema = schemas.find(s => s.name === row.table_schema);
+      if (!schema) {
+        schema = { name: row.table_schema, tables: [] };
+        schemas.push(schema);
+      }
+
+      schema.tables.push({
+        name: row.table_name,
+        type: row.table_type,
+        schema: row.table_schema
+      });
+    });
+
+    return schemas;
   }
 
   async fetchData(table, { offset = 0, limit = 1000, filters = null } = {}) {
@@ -37,20 +75,25 @@ export default class PgConnection {
 
     let result = await this.query({
       text: `
-        SELECT COUNT(*) as count FROM ${table} ${where};
+        SELECT COUNT(*) as count FROM ${this.fullTable(table)} ${where};
       `
     });
 
     let count = result.rows[0].count;
 
-    let orderBy = 'ctid';
-    if (structure.primaryKey) orderBy = structure.primaryKey;
+    let orderBy = '';
+
+    if (table.type !== 'VIEW') {
+      let orderByColumn = 'ctid';
+      if (structure.primaryKey) orderByColumn = structure.primaryKey;
+      orderBy = `ORDER BY "${orderByColumn}" ASC`
+    }
 
     result = await this.query({
       text: `
-        SELECT * FROM ${table}
+        SELECT * FROM ${this.fullTable(table)}
         ${where}
-        ORDER BY "${orderBy}" ASC
+        ${orderBy}
         LIMIT $1
         OFFSET $2;
       `,
@@ -74,7 +117,7 @@ export default class PgConnection {
         WHERE c.table_schema = $1
         AND c.table_name = $2;
       `,
-      values: ['public', table]
+      values: [table.schema, table.name]
     });
 
     let pkeysResult = await this.query({
@@ -90,7 +133,7 @@ export default class PgConnection {
         WHERE tco.constraint_type = 'PRIMARY KEY'
         LIMIT 1;
       `,
-      values: ['public', table]
+      values: [table.schema, table.name]
     });
 
     let primaryKey = null;
@@ -99,7 +142,6 @@ export default class PgConnection {
     }
 
     return {
-      schema: 'public',
       table,
       primaryKey,
       columns: result.rows.map(row => {
@@ -149,7 +191,7 @@ export default class PgConnection {
     return updates.map(update => {
       let changes = Object.entries(update.changes).map(([col, value]) => `"${col}"='${value}'`).join(', ');
       let where = this.identifyConditions(update.row, structure);
-      return `UPDATE "${structure.schema}"."${structure.table}" SET ${changes} WHERE ${where};`;
+      return `UPDATE ${this.fullTable(structure.table)} SET ${changes} WHERE ${where};`;
     }).join("\n")
   }
 
@@ -159,7 +201,7 @@ export default class PgConnection {
     let where = deletes.map(row => this.identifyConditions(row, structure))
       .join(' OR ');
 
-    return `DELETE FROM "${structure.schema}"."${structure.table}" WHERE ${where};`;
+    return `DELETE FROM ${this.fullTable(structure.table)} WHERE ${where};`;
   }
 
   generateInsertQuery(inserts, structure) {
@@ -171,14 +213,14 @@ export default class PgConnection {
       if (columns.length > 0) {
         values = `(${columns.map(c => `"${c}"`).join(', ')}) VALUES(${columns.map(c => `'${insert[c]}'`).join(', ')})`;
       }
-      return `INSERT INTO "${structure.schema}"."${structure.table}"${values};`;
+      return `INSERT INTO ${this.fullTable(structure.table)}${values};`;
     }).join("\n");
   }
 
   identifyConditions(row, structure) {
     if (structure.primaryKey) return `"${structure.primaryKey}"=${row[structure.primaryKey]}`;
     let rowConditions = Object.entries(row).map(([col, value]) => this.columnEqualsValue(col, value)).join(' AND ');
-    return `ctid IN (SELECT ctid FROM "${structure.schema}"."${structure.table}" WHERE ${rowConditions} LIMIT 1 FOR UPDATE)`;
+    return `ctid IN (SELECT ctid FROM ${this.fullTable(structure.table)} WHERE ${rowConditions} LIMIT 1 FOR UPDATE)`;
   }
 
   columnEqualsValue(col, value) {
@@ -187,6 +229,10 @@ export default class PgConnection {
     } else {
       return `"${col}"='${value}'`;
     }
+  }
+
+  fullTable({ name, schema }) {
+    return `"${schema}"."${name}"`;
   }
 
   query(...args) {
