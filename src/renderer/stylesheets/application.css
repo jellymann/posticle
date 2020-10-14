@@ -23,3 +23,7 @@ textarea {
   font-family: inherit;
   font-size: inherit;
 }
+
+svg {
+  display: block;
+}
