@@ -4,22 +4,28 @@ jest.mock('pg');
 
 const ID_SCTRUCTURE = {
   primaryKey: 'key',
-  schema: 'public',
-  table: 'foo',
+  table: {
+    schema: 'public',
+    name: 'foo'
+  }
 };
 
 const NO_ID_STRUCTURE = {
   primaryKey: null,
-  schema: 'public',
-  table: 'foo',
+  table: {
+    schema: 'public',
+    name: 'foo'
+  }
 }
 
 describe('PgConnection', () => {
   describe('generateChangeQuery', () => {
     it('generates update queries', () => {
       let changes = {
-        schema: 'public',
-        table: 'foo',
+        table: {
+          schema: 'public',
+          name: 'foo'
+        },
         updates: [{
           row: { key: 1234 },
           changes: { bar: 'baz' }
@@ -33,8 +39,10 @@ describe('PgConnection', () => {
 
     it('generates delete queries', () => {
       let changes = {
-        schema: 'public',
-        table: 'foo',
+        table: {
+          schema: 'public',
+          name: 'foo'
+        },
         deletes: [{ key: 1234 }, { key: 2345 }]
       }
 
@@ -45,8 +53,10 @@ describe('PgConnection', () => {
 
     it('generates insert queries', () => {
       let changes = {
-        schema: 'public',
-        table: 'foo',
+        table: {
+          schema: 'public',
+          name: 'foo'
+        },
         inserts: [
           { bar: 'A', baz: 'B' },
           { bar: 'C', baz: 'D' }
@@ -61,8 +71,10 @@ describe('PgConnection', () => {
 
     it('generates insert query with all defaults', () => {
       let changes = {
-        schema: 'public',
-        table: 'foo',
+        table: {
+          schema: 'public',
+          name: 'foo'
+        },
         inserts: [
           {}
         ]
@@ -75,8 +87,10 @@ describe('PgConnection', () => {
 
     it('generates combination of queries', () => {
       let changes = {
-        schema: 'public',
-        table: 'foo',
+        table: {
+          schema: 'public',
+          name: 'foo'
+        },
         updates: [{
           row: { key: 1234 },
           changes: { bar: 'baz' }
@@ -98,8 +112,10 @@ describe('PgConnection', () => {
 
     it('handles table with no id', () => {
       let changes = {
-        schema: 'public',
-        table: 'foo',
+        table: {
+          schema: 'public',
+          name: 'foo'
+        },
         updates: [{
           row: { bar: 'A', baz: 'Z' },
           changes: { baz: 'W' }
