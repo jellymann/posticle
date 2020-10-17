@@ -5,6 +5,9 @@
   padding: 0.5rem 1rem;
   cursor: pointer;
   outline: none;
+  height: 2rem;
+  display: flex;
+  align-items: center;
 
   &:hover {
     background: $button-background-hover;

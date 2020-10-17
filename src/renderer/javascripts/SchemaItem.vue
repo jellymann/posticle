@@ -32,19 +32,19 @@
 
   &--schema {
     #{$block}__icon {
-      stroke: map-get($gray, dark);
+      color: map-get($gray, dark);
     }
   }
 
   &--view {
     #{$block}__icon {
-      fill: $view-icon-color;
+      color: $view-icon-color;
     }
   }
 
   &--table {
     #{$block}__icon {
-      fill: $table-icon-color;
+      color: $table-icon-color;
     }
   }
 }
