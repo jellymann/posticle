@@ -50,7 +50,7 @@
 </style>
 
 <script>
-import { computed, inject, ref, watch, watchEffect } from 'vue';
+import { computed, inject, ref, watch, watchEffect, onMounted, onBeforeUnmount } from 'vue';
 import callMain from './callMain';
 
 export default {

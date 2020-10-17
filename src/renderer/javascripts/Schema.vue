@@ -34,23 +34,11 @@
   margin: 0;
   padding: 0;
 
-  &__table-link {
-    svg {
-      fill: black;
-    }
-  }
-
   &__schema {
     &--open {
       #{$block}__schema-tables {
         display: block;
       }
-    }
-  }
-
-  &__schema-link {
-    svg {
-      stroke: black;
     }
   }
 

@@ -3,8 +3,12 @@
     <ul class="filter__filters">
       <li v-for="(filter, index) in filters" :key="index" class="filter__filter">
         <filter-item :filter="filter" :columns="columns"></filter-item>
-        <button class="filter__button" @click="removeFilter(index)" v-if="filters.length > 1"> - </button>
-        <button class="filter__button" @click="addFilter(index)"> + </button>
+        <button class="filter__button filter__button--icon" @click="removeFilter(index)" v-if="filters.length > 1">
+          <minus-icon />
+        </button>
+        <button class="filter__button filter__button--icon" @click="addFilter(index)">
+          <plus-icon />
+        </button>
       </li>
     </ul>
     <div class="filter__actions">
@@ -50,6 +54,10 @@
   &__button {
     @include button;
 
+    &--icon {
+      padding: 0 0.25rem;
+    }
+
     & + & {
       margin-left: 0.5rem;
     }
@@ -60,10 +68,14 @@
 <script>
 import { ref, computed, watchEffect } from 'vue';
 import FilterItem from './FilterItem.vue';
+import PlusIcon from '../images/plus.svg';
+import MinusIcon from '../images/minus.svg';
 
 export default {
   components: {
-    FilterItem
+    FilterItem,
+    PlusIcon,
+    MinusIcon
   },
   props: {
     columns: Array,

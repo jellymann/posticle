@@ -65,9 +65,6 @@
 
   &__button {
     @include button;
-    height: 2rem;
-    display: flex;
-    align-items: center;
     padding: 0 0.25rem;
 
     &:not(:first-child) {
@@ -80,11 +77,6 @@
       border-bottom-right-radius: 0;
       border-right: none;
     }
-
-    svg {
-      stroke: currentColor;
-      fill: currentColor;
-    }
   }
 
   &__breadcrumbs {
@@ -95,9 +87,6 @@
   &__breadcrumb {
     @include button;
     position: relative;
-    height: 2rem;
-    display: flex;
-    align-items: center;
 
     &:not(:first-child) {
       border-top-left-radius: 0;
@@ -147,19 +136,19 @@
     margin-right: 0.5rem;
 
     &--host {
-      stroke: map-get($gray, default);
+      color: map-get($gray, default);
     }
 
     &--database {
-      stroke: map-get($gray, default);
+      color: map-get($gray, default);
     }
 
     &--view {
-      fill: $view-icon-color
+      color: $view-icon-color
     }
 
     &--table {
-      fill: $table-icon-color
+      color: $table-icon-color
     }
   }
 

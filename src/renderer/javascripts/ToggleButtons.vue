@@ -13,6 +13,8 @@
 
 <style lang="scss" scoped>
 .toggle-button {
+  display: flex;
+
   &__button {
     @include button;
 

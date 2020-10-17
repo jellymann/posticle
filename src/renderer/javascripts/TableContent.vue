@@ -42,25 +42,26 @@
     <div class="status-bar__left">
       <slot></slot>
       <button v-if="data" class="status-bar__button status-bar__new-row" @click="newRow">
-        + Row
+        <plus-icon />
+        Row
       </button>
     </div>
     <div v-if="data" class="status-bar__center">{{ startRow }} - {{ endRow }} of {{ data.count }}</div>
     <div v-if="data" class="status-bar__right">
       <button
-        :class="{ 'filter-button': true, 'filter-button--active': filterOpen }"
+        :class="{ 'status-bar__button': true, 'filter-button': true, 'filter-button--active': filterOpen }"
         @click="filterOpen = !filterOpen">
         Filter
       </button>
       <div class="pagination">
-        <button class="pagination__previous" @click="previousPage">
-          &lt;
+        <button class="status-bar__button pagination__previous" @click="previousPage">
+          <back-icon />
         </button>
-        <button class="pagination__page">
+        <button class="status-bar__button pagination__page">
           Page {{ currentPage }} of {{ totalPages }}
         </button>
-        <button class="pagination__next" @click="nextPage">
-          &gt;
+        <button class="status-bar__button pagination__next" @click="nextPage">
+          <forward-icon />
         </button>
       </div>
     </div>
@@ -114,6 +115,12 @@
 
   &__new-row {
     margin-left: 0.5rem;
+    padding-left: 0.5rem;
+  }
+
+  &__button {
+    display: flex;
+    align-items: center;
   }
 }
 
@@ -123,8 +130,14 @@
 }
 
 .pagination {
+  display: flex;
+
   &__previous, &__page, &__next {
     @include button;
+  }
+
+  &__previous, &__next {
+    padding: 0 0.25rem;
   }
 
   &__previous {
@@ -150,12 +163,19 @@ import { computed, inject, onMounted, ref, reactive, watch, watchEffect, onBefor
 import callMain from './callMain';
 import TableFilter from "./TableFilter.vue";
 import TableRow from "./TableRow.vue";
+import PlusIcon from '../images/plus.svg';
+import BackIcon from '../images/back.svg';
+import ForwardIcon from '../images/forward.svg';
 
 const ROWS_PER_PAGE = 1000;
 
 export default {
   components: {
-    TableFilter, TableRow
+    TableFilter,
+    TableRow,
+    PlusIcon,
+    BackIcon,
+    ForwardIcon
   },
   props: {
     table: Object
