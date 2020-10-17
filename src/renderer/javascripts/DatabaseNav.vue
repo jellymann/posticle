@@ -11,13 +11,13 @@
 
     <div class="nav__breadcrumbs">
       <button class="nav__breadcrumb">
-        Connection
+        {{ connection ? connection.host : '...' }}
       </button>
-      <button class="nav__breadcrumb">
-        Database
+      <button class="nav__breadcrumb" v-if="connection && connection.database">
+        {{ connection ? connection.database : '...' }}
       </button>
-      <button class="nav__breadcrumb">
-        Table
+      <button class="nav__breadcrumb" v-if="connection && table">
+        {{ table.name }}
       </button>
     </div>
 
@@ -154,13 +154,20 @@
 </style>
 
 <script>
-import { ref } from 'vue'
+import { ref, inject } from 'vue'
+import callMain from './callMain';
+
 export default {
   props: {
+    table: Object,
     leftBarOpen: Boolean,
     rightBarOpen: Boolean
   },
   setup(props, { emit }) {
+    const connectionId = inject('connectionId');
+
+    const connection = ref(null);
+
     const leftBarOpen = ref(props.leftBarOpen);
     const rightBarOpen = ref(props.rightBarOpen);
 
@@ -174,8 +181,14 @@ export default {
       emit('update:rightBarOpen', rightBarOpen.value);
     }
 
+    callMain('getConnectionInfo', { connectionId })
+      .then(info => {
+        connection.value = info;
+      });
+
     return {
       ...props,
+      connection,
       leftBarOpen,
       rightBarOpen,
       toggleLeftBar,

@@ -101,3 +101,10 @@ respondToRenderer('performChanges', async (data) => {
 
   return await connection.performChanges(data);
 })
+
+respondToRenderer('getConnectionInfo', async (data) => {
+  let connection = PgConnection.find(data.connectionId);
+  if (!connection) return;
+
+  return { host: connection.host, database: connection.database };
+});

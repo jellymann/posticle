@@ -1,6 +1,10 @@
 <template>
   <div class="container">
-    <database-nav v-model:leftBarOpen="leftBarOpen" v-model:rightBarOpen="rightBarOpen" />
+    <database-nav
+      :table="currentTable"
+      v-model:leftBarOpen="leftBarOpen"
+      v-model:rightBarOpen="rightBarOpen"
+    />
     <div class="main">
       <div class="main__left" v-show="leftBarOpen">
         <schema v-model="currentTable" />

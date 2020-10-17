@@ -12,6 +12,14 @@ export default class PgConnection {
     CONNECTIONS[this.id] = this;
   }
 
+  get host() {
+    return this.client.host;
+  }
+
+  get database() {
+    return this.client.database;
+  }
+
   async connect() {
     await this.client.connect();
   }
