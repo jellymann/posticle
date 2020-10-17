@@ -38,13 +38,13 @@
 
   &--view {
     #{$block}__icon {
-      fill: #007AA0;
+      fill: $view-icon-color;
     }
   }
 
   &--table {
     #{$block}__icon {
-      fill: #B78400;
+      fill: $table-icon-color;
     }
   }
 }
