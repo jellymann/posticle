@@ -4,6 +4,7 @@
       :table="currentTable"
       v-model:leftBarOpen="leftBarOpen"
       v-model:rightBarOpen="rightBarOpen"
+      @breadcrumb="breadcrumbSelected"
     />
     <div class="main">
       <div class="main__left" v-show="leftBarOpen">
@@ -73,10 +74,21 @@ export default {
     const leftBarOpen = ref(true);
     const rightBarOpen = ref(false);
 
+    const breadcrumbSelected = (breadcrumb) => {
+      switch (breadcrumb) {
+        case 'host':
+          break;
+        case 'database':
+          currentTable.value = null;
+          break;
+      }
+    };
+
     return {
       currentTable,
       leftBarOpen,
-      rightBarOpen
+      rightBarOpen,
+      breadcrumbSelected
     };
   }
 }
