@@ -162,6 +162,7 @@ export default {
   },
   setup(props) {
     const connectionId = inject('connectionId');
+    const eventTarget = inject('eventTarget');
 
     const data = ref(null);
     const rows = ref(null);
@@ -369,9 +370,12 @@ export default {
 
     onMounted(() => {
       document.addEventListener('keydown', deletePress, false);
+      eventTarget.addEventListener('refresh', loadDataAndStructure);
     });
+
     onBeforeUnmount(() => {
       document.removeEventListener('keydown', deletePress);
+      eventTarget.removeEventListener('refresh', loadDataAndStructure);
     });
 
     const discardChanges = () => {
