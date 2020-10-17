@@ -65,7 +65,7 @@
 </style>
 
 <script>
-import { ref, inject } from 'vue';
+import { ref, inject, onMounted, onBeforeUnmount } from 'vue';
 import callMain from './callMain';
 import SchemaItem from './SchemaItem.vue';
 
@@ -78,25 +78,28 @@ export default {
   },
   setup(props, { emit }) {
     const connectionId = inject('connectionId');
+    const eventTarget = inject('eventTarget');
 
     const currentTable = ref(props.modelValue)
     const loading = ref(true);
     const publicTables = ref([]);
     const otherSchemas = ref([]);
 
-    callMain('fetchTables', { connectionId })
-      .then(result => {
+    const loadTables = async () => {
+      try {
+        loading.value = true;
+        let result = await callMain('fetchTables', { connectionId });
         publicTables.value = result.publicTables;
         otherSchemas.value = result.otherSchemas;
-      })
-      .catch(error => {
+      } catch(error) {
         console.error(error);
         publicTables.value = [];
         otherSchemas.value = [];
-      })
-      .finally(() => {
+      } finally {
         loading.value = false;
-      });
+      };
+    }
+    loadTables();
 
     const selectTable = (table) => {
       currentTable.value = table;
@@ -106,6 +109,14 @@ export default {
     const toggleSchema = (schema) => {
       schema.isOpen = !schema.isOpen;
     }
+
+    onMounted(() => {
+      eventTarget.addEventListener('refresh', loadTables);
+    });
+
+    onBeforeUnmount(() => {
+      eventTarget.removeEventListener('refresh', loadTables);
+    });
 
     return {
       loading,

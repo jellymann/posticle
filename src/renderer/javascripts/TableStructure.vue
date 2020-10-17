@@ -59,11 +59,12 @@ export default {
   },
   setup(props) {
     const connectionId = inject('connectionId');
+    const eventTarget = inject('eventTarget');
     
     const structure = ref(null);
     const loading = ref(false);
 
-    const loadStructure = async (table) => {
+    const loadStructure = async (table = props.table) => {
       loading.value = true;
 
       try {
@@ -78,6 +79,14 @@ export default {
         loading.value = false;
       }
     }
+
+    onMounted(() => {
+      eventTarget.addEventListener('refresh', loadStructure);
+    });
+
+    onBeforeUnmount(() => {
+      eventTarget.removeEventListener('refresh', loadStructure);
+    });
 
     watchEffect(() => {
       loadStructure(props.table);

@@ -5,6 +5,7 @@
       v-model:leftBarOpen="leftBarOpen"
       v-model:rightBarOpen="rightBarOpen"
       @breadcrumb="breadcrumbSelected"
+      @refresh="refresh"
     />
     <div class="main">
       <div class="main__left" v-show="leftBarOpen">
@@ -68,6 +69,8 @@ export default {
     id: String
   },
   setup(props) {
+    const eventTarget = new EventTarget();
+    provide('eventTarget', eventTarget);
     provide('connectionId', props.id);
 
     const currentTable = ref(null);
@@ -84,11 +87,17 @@ export default {
       }
     };
 
+    const refresh = () => {
+      const refreshEvent = new CustomEvent('refresh');
+      eventTarget.dispatchEvent(refreshEvent);
+    }
+
     return {
       currentTable,
       leftBarOpen,
       rightBarOpen,
-      breadcrumbSelected
+      breadcrumbSelected,
+      refresh
     };
   }
 }

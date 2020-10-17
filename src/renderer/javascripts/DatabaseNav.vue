@@ -28,7 +28,7 @@
       </div>
     </div>
 
-    <button class="nav__refresh-button">
+    <button class="nav__refresh-button" @click="refresh">
       R
     </button>
 
@@ -189,6 +189,10 @@ export default {
       emit('breadcrumb', 'database');
     }
 
+    const refresh = () => {
+      emit('refresh');
+    }
+
     callMain('getConnectionInfo', { connectionId })
       .then(info => {
         connection.value = info;
@@ -202,7 +206,8 @@ export default {
       toggleLeftBar,
       toggleRightBar,
       breadcrumbHost,
-      breadcrumbDatabase
+      breadcrumbDatabase,
+      refresh
     }
   }
 }
