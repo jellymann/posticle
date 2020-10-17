@@ -26,9 +26,9 @@ jobs:
       uses: actions/cache@v1
       with:
         path: node_modules
-        key: yarn-v1-${{ hashFiles('.node-version') }}-${{ hashFiles('**/yarn.lock') }}
+        key: yarn-v1-${{ matrix.os }}-${{ hashFiles('.node-version') }}-${{ hashFiles('**/yarn.lock') }}
         restore-keys: |
-          yarn-v1-${{ hashFiles('.node-version') }}-
+          yarn-v1-${{ matrix.os }}-${{ hashFiles('.node-version') }}-
 
     - name: Install JavaScript dependencies
       run: yarn install
