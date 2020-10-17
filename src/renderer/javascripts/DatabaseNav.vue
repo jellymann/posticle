@@ -24,7 +24,7 @@
     <div class="nav__status-bar">
       Connected.
       <div class="nav__pg-version">
-        PostgreSQL X.Y.Z
+        PostgreSQL {{ connection && connection.version }}
       </div>
     </div>
 

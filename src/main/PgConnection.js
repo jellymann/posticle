@@ -22,6 +22,12 @@ export default class PgConnection {
 
   async connect() {
     await this.client.connect();
+    this.version = await this.getServerVersion();
+  }
+
+  async getServerVersion() {
+    let result = await this.client.query('SHOW server_version;')
+    return result.rows[0].server_version;
   }
 
   async fetchTables() {
