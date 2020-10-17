@@ -39,5 +39,10 @@
       "publish": null,
       "category": "your.app.category.type"
     }
+  },
+  "scripts": {
+    "test": "bozon test",
+    "start": "bozon start",
+    "build": "bozon package"
   }
 }
