@@ -106,5 +106,9 @@ respondToRenderer('getConnectionInfo', async (data) => {
   let connection = PgConnection.find(data.connectionId);
   if (!connection) return;
 
-  return { host: connection.host, database: connection.database };
+  return {
+    host: connection.host,
+    database: connection.database,
+    version: connection.version
+  };
 });
