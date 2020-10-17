@@ -1,7 +1,6 @@
 <template>
   <div class="container">
-    <div class="nav">
-    </div>
+    <database-nav />
     <div class="main">
       <div class="main__left">
         <schema v-model="currentTable" />
@@ -19,13 +18,6 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-}
-
-.nav {
-  height: 3rem;
-  flex-shrink: 0;
-  background: $panel-background;
-  border-bottom: $panel-border;
 }
 
 .main {
@@ -63,9 +55,10 @@ import { provide, ref, watchEffect } from 'vue';
 import callMain from './callMain';
 import Schema from './Schema.vue';
 import TableView from './TableView.vue'
+import DatabaseNav from './DatabaseNav.vue';
 
 export default {
-  components: { Schema, TableView },
+  components: { Schema, TableView, DatabaseNav },
   props: {
     id: String
   },

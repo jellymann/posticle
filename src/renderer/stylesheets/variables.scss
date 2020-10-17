@@ -13,7 +13,8 @@ $panel-border: $panel-border-width solid $panel-border-color;
 
 $button-background: map-get($gray, lighter);
 $button-background-hover: map-get($gray, lightest);
-$button-border: 1px solid map-get($gray, light);
+$button-border-color: map-get($gray, light);
+$button-border: 1px solid $button-border-color;
 
 $input-border: 1px solid map-get($gray, lighter);
 
