@@ -10,10 +10,10 @@
     </div>
 
     <div class="nav__breadcrumbs">
-      <button class="nav__breadcrumb">
+      <button class="nav__breadcrumb" @click="breadcrumbHost">
         {{ connection ? connection.host : '...' }}
       </button>
-      <button class="nav__breadcrumb" v-if="connection && connection.database">
+      <button class="nav__breadcrumb" @click="breadcrumbDatabase" v-if="connection && connection.database">
         {{ connection ? connection.database : '...' }}
       </button>
       <button class="nav__breadcrumb" v-if="connection && table">
@@ -181,6 +181,14 @@ export default {
       emit('update:rightBarOpen', rightBarOpen.value);
     }
 
+    const breadcrumbHost = () => {
+      emit('breadcrumb', 'host');
+    }
+
+    const breadcrumbDatabase = () => {
+      emit('breadcrumb', 'database');
+    }
+
     callMain('getConnectionInfo', { connectionId })
       .then(info => {
         connection.value = info;
@@ -192,7 +200,9 @@ export default {
       leftBarOpen,
       rightBarOpen,
       toggleLeftBar,
-      toggleRightBar
+      toggleRightBar,
+      breadcrumbHost,
+      breadcrumbDatabase
     }
   }
 }
