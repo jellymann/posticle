@@ -1,14 +1,14 @@
 <template>
   <div class="container">
-    <database-nav />
+    <database-nav v-model:leftBarOpen="leftBarOpen" v-model:rightBarOpen="rightBarOpen" />
     <div class="main">
-      <div class="main__left">
+      <div class="main__left" v-show="leftBarOpen">
         <schema v-model="currentTable" />
       </div>
       <div class="main__content">
         <table-view :table="currentTable" v-if="currentTable" />
       </div>
-      <div class="main__right"></div>
+      <div class="main__right" v-show="rightBarOpen"></div>
     </div>
   </div>
 </template>
@@ -66,9 +66,13 @@ export default {
     provide('connectionId', props.id);
 
     const currentTable = ref(null);
+    const leftBarOpen = ref(true);
+    const rightBarOpen = ref(false);
 
     return {
-      currentTable
+      currentTable,
+      leftBarOpen,
+      rightBarOpen
     };
   }
 }

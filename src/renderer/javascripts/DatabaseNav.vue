@@ -33,10 +33,10 @@
     </button>
 
     <div class="nav__sidebar-tggles">
-      <button class='nav__button'>
+      <button :class="{ 'nav__button':true, 'nav__button--active': leftBarOpen }" @click="toggleLeftBar">
         X
       </button>
-      <button class='nav__button'>
+      <button :class="{ 'nav__button':true, 'nav__button--active': rightBarOpen }" @click="toggleRightBar">
         Y
       </button>
     </div>
@@ -152,3 +152,35 @@
   }
 }
 </style>
+
+<script>
+import { ref } from 'vue'
+export default {
+  props: {
+    leftBarOpen: Boolean,
+    rightBarOpen: Boolean
+  },
+  setup(props, { emit }) {
+    const leftBarOpen = ref(props.leftBarOpen);
+    const rightBarOpen = ref(props.rightBarOpen);
+
+    const toggleLeftBar = () => {
+      leftBarOpen.value = !leftBarOpen.value;
+      emit('update:leftBarOpen', leftBarOpen.value);
+    }
+
+    const toggleRightBar = () => {
+      rightBarOpen.value = !rightBarOpen.value;
+      emit('update:rightBarOpen', rightBarOpen.value);
+    }
+
+    return {
+      ...props,
+      leftBarOpen,
+      rightBarOpen,
+      toggleLeftBar,
+      toggleRightBar
+    }
+  }
+}
+</script>
