@@ -1,6 +1,6 @@
 <template>
-  <div class="center">
-    <div class="form">
+  <div class="connection">
+    <div v-if="isEditing" class="form">
       <div class="form__row">
         <div class="form__field">
           <label class="form__label">Host</label>
@@ -33,8 +33,14 @@
         <div v-if="error" class="form__error">
           {{ error }}
         </div>
-        <button class="form__action" @click="onButtonClick()">Click me!</button>
+        <button class="form__action" @click="isEditing = false">Done</button>
+        <button class="form__action" @click="connect">Connect</button>
       </div>
+    </div>
+    <div v-if="!isEditing">
+      <div>{{connection.nickname || connection.host}}</div>
+      <button @click="isEditing = true">Edit</button>
+      <button @click="connect">Connect</button>
     </div>
   </div>
 </template>
@@ -108,27 +114,29 @@ import { ref, reactive, onBeforeUnmount } from 'vue';
 import callMain from './callMain';
 
 export default {
+  props: {
+    connection: Object,
+  },
   setup(props) {
+    const isEditing = ref(false);
+
     const error = ref(null);
-    let connection = reactive({
-      host: 'localhost',
-      port: '5432',
-      username: 'jelly',
-      password: '',
-      database: 'jelly',
-    });
+    let connection = reactive(props.connection);
+
+    const connect = async () => {
+      try {
+        let data = await callMain('connect', { ...connection });
+        window.location.hash = `database/${data.id}`;
+      } catch (e) {
+        error.value = e.message;
+      }
+    };
 
     return {
       connection,
       error,
-      onButtonClick: async () => {
-        try {
-          let data = await callMain('connect', { ...connection });
-          window.location.hash = `database/${data.id}`;
-        } catch (e) {
-          error.value = e.message;
-        }
-      }
+      connect,
+      isEditing
     }
   }
 }

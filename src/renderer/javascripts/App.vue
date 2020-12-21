@@ -6,21 +6,21 @@
 import { ref } from 'vue';
 
 import Database from './Database.vue';
-import Connection from './Connection.vue'
+import Connections from './Connections.vue'
 
 import { findMatchingRoute } from './urlTemplate';
 
 const ROUTES = {
-  '': 'Connection',
+  '': 'Connections',
   'database/:id': 'Database'
 };
 
-const DEFAULT_ROUTE = 'Connection';
+const DEFAULT_ROUTE = 'Connections';
 
 const stripHash = s => s.indexOf('#') === 0 ? s.substring(1) : s;
 
 export default {
-  components: { Database, Connection },
+  components: { Database, Connections },
   setup() {
     const currentRoute = ref({});
 
