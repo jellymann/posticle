@@ -46,31 +46,35 @@
         <button class="form__action" @click="connect">Connect</button>
       </div>
     </div>
-    <div v-if="!isEditing">
-      <div>{{connection.nickname || connection.host || 'localhost'}}</div>
-      <button @click="$emit('edit')">Edit</button>
-      <button @click="connect">Connect</button>
-      <div v-if="error" class="form__error">
-        {{ error }}
+    <div v-if="!isEditing" class="summary">
+      <div class="summary__row">
+        <div class="summary__nickname">{{connection.nickname || connection.host || 'localhost'}}</div>
+        <button class="summary__action" @click="$emit('edit')">Edit</button>
+        <button class="summary__action" @click="connect">Connect</button>
+      </div>
+      <div class="summary__row">
+        <div v-if="error" class="summary__error">
+          {{ error }}
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.center {
-  justify-content: space-around;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-  display: flex;
+.connection {
+  padding: 1rem;
+  background: $panel-background;
+  border: $panel-border;
+  border-radius: $border-radius-large;
+  max-width: 32rem;
 }
 
 .form {
   display: flex;
   flex-direction: column;
   padding: 0.5rem 1rem;
-  max-width: 32rem;
+  
   flex: 1 0 auto;
 
   &__row {
@@ -115,11 +119,6 @@
       margin-left: 1rem;
     }
   }
-  
-  &__error {
-    color: red;
-    margin-right: 1rem;
-  }
 
   &__action {
     @include button;
@@ -128,6 +127,31 @@
 
 .left {
   margin-right: auto;
+}
+
+.summary {
+  &__row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+  }
+
+  &__nickname {
+    margin-right: auto
+  }
+
+  &__action {
+    @include button;
+
+    & + & {
+      margin-left: 0.5rem;
+    }
+  }
+  
+  &__error {
+    color: red;
+    margin-left: auto;
+  }
 }
 </style>
 
