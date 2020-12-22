@@ -1,10 +1,10 @@
 {
-  "name": "Posticle",
+  "name": "posticle",
   "version": "0.1.0",
   "description": "Posticle application build with Electron",
   "author": {
     "name": "Daniel Smith",
-    "email": ""
+    "email": "danini@hey.com"
   },
   "repository": {},
   "dependencies": {
@@ -33,13 +33,15 @@
     "vue-svg-loader": "^0.17.0-beta.2"
   },
   "build": {
-    "appId": "com.electron.posticle",
+    "appId": "za.co.sourlemon.posticle",
+    "productName": "Posticle",
+    "copyright": "Copyright © 2019 ${author}",
     "win": {
       "publish": null
     },
     "mac": {
       "publish": null,
-      "category": "your.app.category.type"
+      "category": "public.app-category.developer-tools"
     }
   },
   "scripts": {
