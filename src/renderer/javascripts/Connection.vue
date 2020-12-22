@@ -20,7 +20,7 @@
       <div class="form__row">
         <div class="form__field">
           <label class="form__label">Username</label>
-          <input class="form__input" v-model="connection.username" />
+          <input class="form__input" v-model="connection.username" :placeholder="username"/>
         </div>
       </div>
       <div class="form__row">
@@ -32,7 +32,7 @@
       <div class="form__row">
         <div class="form__field">
           <label class="form__label">Database</label>
-          <input class="form__input" v-model="connection.database" />
+          <input class="form__input" v-model="connection.database" :placeholder="connection.username || username" />
         </div>
       </div>
       <div class="form__actions">
@@ -165,6 +165,7 @@ export default {
   props: {
     connection: Object,
     isEditing: Boolean,
+    username: String,
   },
   emits: ['edit', 'done', 'duplicate', 'delete'],
   setup(props, { emit }) {

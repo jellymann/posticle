@@ -10,6 +10,7 @@
         <Connection
           :connection="connection"
           :isEditing="editingConnectionId === connection.id"
+          :username="currentUsername"
           @edit="editingConnectionId = connection.id"
           @done="editingConnectionId = null"
           @duplicate="duplicate(connection)"
@@ -120,7 +121,7 @@
 </style>
 
 <script>
-import { ref, reactive, onBeforeUnmount } from 'vue';
+import { ref, reactive, onBeforeUnmount, watch } from 'vue';
 import callMain from './callMain';
 import Connection from './Connection.vue';
 import PosticleIcon from '../images/posticle.svg';
@@ -129,23 +130,22 @@ import { v4 as uuid } from 'uuid';
 export default {
   components: { Connection, PosticleIcon },
   setup(props) {
-    let connections = reactive([{
-      id: uuid(),
-      nickname: 'jelly',
-      host: 'localhost',
-      port: '5432',
-      username: 'jelly',
-      password: '',
-      database: 'jelly',
-    }, {
-      id: uuid(),
-      nickname: 'mbp',
-      host: 'localhost',
-      port: '5432',
-      username: 'daniel',
-      password: '',
-      database: 'postgres',
-    }]);
+    let initialised = false;
+    let connections = reactive([]);
+    let currentUsername = ref('');
+
+    (async () => {
+      let { favourites, username } = await callMain('init')
+      currentUsername.value = username;
+      connections.push(...favourites);
+      initialised = true;
+    })();
+
+    watch(connections, () => {
+      if (initialised) {
+        callMain('saveFavourites', [...connections.map(c => ({ ...c }))]);
+      }
+    });
 
     const editingConnectionId = ref(null);
 
@@ -177,6 +177,7 @@ export default {
 
     return {
       connections,
+      currentUsername,
       newConnection,
       editingConnectionId,
       duplicate,

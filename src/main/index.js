@@ -1,9 +1,11 @@
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
-import path from 'path'
+import path from 'path';
+import fs from 'fs';
 import { app, BrowserWindow } from 'electron'
 import PgConnection from './PgConnection';
 import respondToRenderer from './respondToRenderer';
+import username from 'username';
 
 const createWindow = () => {
   // Create the browser window.
@@ -58,6 +60,27 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow()
   }
+});
+
+let favouritesPath = path.join(app.getPath('userData'), 'favourites.json');
+
+respondToRenderer('init', async () => {
+  let currentUsername = await username();
+
+  let favourites = [];
+
+  try {
+    await fs.promises.stat(favouritesPath);
+    favourites = JSON.parse(await fs.promises.readFile(favouritesPath));
+  } catch {
+    await fs.promises.writeFile(favouritesPath, JSON.stringify(favourites));
+  }
+
+  return { favourites, username: currentUsername };
+});
+
+respondToRenderer('saveFavourites', async (data) => {
+  await fs.promises.writeFile(favouritesPath, JSON.stringify(data));
 });
 
 respondToRenderer('connect', async (data) => {
