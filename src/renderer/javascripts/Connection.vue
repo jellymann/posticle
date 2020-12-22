@@ -3,12 +3,18 @@
     <div v-if="isEditing" class="form">
       <div class="form__row">
         <div class="form__field">
+          <label class="form__label">Nickname</label>
+          <input class="form__input" v-model="connection.nickname" />
+        </div>
+      </div>
+      <div class="form__row">
+        <div class="form__field">
           <label class="form__label">Host</label>
-          <input class="form__input" v-model="connection.host" />
+          <input class="form__input" v-model="connection.host" placeholder="localhost" />
         </div>
         <div class="form__field form__field--short">
           <label class="form__label">Port</label>
-          <input class="form__input" v-model="connection.port" />
+          <input class="form__input" v-model="connection.port" placeholder="5432" />
         </div>
       </div>
       <div class="form__row">
@@ -30,17 +36,23 @@
         </div>
       </div>
       <div class="form__actions">
-        <div v-if="error" class="form__error">
-          {{ error }}
-        </div>
-        <button class="form__action" @click="isEditing = false">Done</button>
+        <DropdownMenu
+          class="left"
+          label="Options"
+          :options="['Duplicate', 'Delete']"
+          @select="optionSelected"
+        />
+        <button class="form__action" @click="$emit('done')">Done</button>
         <button class="form__action" @click="connect">Connect</button>
       </div>
     </div>
     <div v-if="!isEditing">
-      <div>{{connection.nickname || connection.host}}</div>
-      <button @click="isEditing = true">Edit</button>
+      <div>{{connection.nickname || connection.host || 'localhost'}}</div>
+      <button @click="$emit('edit')">Edit</button>
       <button @click="connect">Connect</button>
+      <div v-if="error" class="form__error">
+        {{ error }}
+      </div>
     </div>
   </div>
 </template>
@@ -97,6 +109,12 @@
     align-items: center;
     margin-top: 1rem;
   }
+
+  &__action {
+    & + & {
+      margin-left: 1rem;
+    }
+  }
   
   &__error {
     color: red;
@@ -107,23 +125,30 @@
     @include button;
   }
 }
+
+.left {
+  margin-right: auto;
+}
 </style>
 
 <script>
 import { ref, reactive, onBeforeUnmount } from 'vue';
 import callMain from './callMain';
+import DropdownMenu from './DropdownMenu.vue';
 
 export default {
+  components: { DropdownMenu },
   props: {
     connection: Object,
+    isEditing: Boolean,
   },
-  setup(props) {
-    const isEditing = ref(false);
-
+  emits: ['edit', 'done', 'duplicate', 'delete'],
+  setup(props, { emit }) {
     const error = ref(null);
     let connection = reactive(props.connection);
 
     const connect = async () => {
+      if (props.isEditing) emit('done');
       try {
         let data = await callMain('connect', { ...connection });
         window.location.hash = `database/${data.id}`;
@@ -132,11 +157,18 @@ export default {
       }
     };
 
+    const optionSelected = option => {
+      switch (option) {
+        case 'Duplicate': emit('duplicate'); break;
+        case 'Delete': emit('delete'); break;
+      }
+    }
+
     return {
       connection,
       error,
       connect,
-      isEditing
+      optionSelected,
     }
   }
 }

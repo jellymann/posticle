@@ -8,7 +8,13 @@
     <div class="connections">
       <ul>
         <li v-for="connection in connections" :key="connection.id">
-          <Connection :connection="connection" />
+          <Connection
+            :connection="connection"
+            :isEditing="editingConnectionId === connection.id"
+            @edit="editingConnectionId = connection.id"
+            @done="editingConnectionId = null"
+            @duplicate="duplicate(connection)"
+            @delete="deleteConnection(connection)" />
         </li>
       </ul>
     </div>
@@ -118,7 +124,6 @@ import { v4 as uuid } from 'uuid';
 export default {
   components: { Connection, PosticleIcon },
   setup(props) {
-    const error = ref(null);
     let connections = reactive([{
       id: uuid(),
       nickname: 'jelly',
@@ -137,8 +142,10 @@ export default {
       database: 'postgres',
     }]);
 
+    const editingConnectionId = ref(null);
+
     const newConnection = () => {
-      connections.push({
+      let conn = {
         id: uuid(),
         nickname: '',
         host: '',
@@ -146,12 +153,29 @@ export default {
         username: '',
         password: '',
         database: '',
-      });
+      };
+      connections.push(conn);
+      editingConnectionId.value = conn.id;
     };
+
+    const duplicate = connection => {
+      let conn = { ...connection, id: uuid() };
+      connections.push(conn);
+      editingConnectionId.value = conn.id;
+    };
+
+    const deleteConnection = connection => {
+      if (confirm(`Delete favourite '${connection.nickname}'?\nYou can't undo this.`)) {
+        connections.splice(connections.findIndex(c => c.id === connection.id), 1);
+      }
+    }
 
     return {
       connections,
       newConnection,
+      editingConnectionId,
+      duplicate,
+      deleteConnection,
     }
   }
 }
