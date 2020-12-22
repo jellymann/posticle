@@ -6,7 +6,7 @@ export default function respondToRenderer(eventName, callback) {
       let response = await callback(data.eventData);
       event.sender.send('message', {
         eventName: data.eventId,
-        eventData: response
+        eventData: response || {}
       });
     } catch (e) {
       console.error(e);
