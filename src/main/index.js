@@ -87,7 +87,7 @@ respondToRenderer('connect', async (data) => {
   let connection = new PgConnection({
     host: data.host,
     port: data.port,
-    username: data.username,
+    user: data.username,
     password: data.password,
     database: data.database,
   });
