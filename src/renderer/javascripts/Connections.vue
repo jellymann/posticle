@@ -5,19 +5,17 @@
       <div class="version">Version 0.0.0</div>
       <button @click="newConnection">New Favourite</button>
     </div>
-    <div class="connections">
-      <ul>
-        <li v-for="connection in connections" :key="connection.id">
-          <Connection
-            :connection="connection"
-            :isEditing="editingConnectionId === connection.id"
-            @edit="editingConnectionId = connection.id"
-            @done="editingConnectionId = null"
-            @duplicate="duplicate(connection)"
-            @delete="deleteConnection(connection)" />
-        </li>
-      </ul>
-    </div>
+    <ul class="connections">
+      <li v-for="connection in connections" :key="connection.id" class="connection">
+        <Connection
+          :connection="connection"
+          :isEditing="editingConnectionId === connection.id"
+          @edit="editingConnectionId = connection.id"
+          @done="editingConnectionId = null"
+          @duplicate="duplicate(connection)"
+          @delete="deleteConnection(connection)" />
+      </li>
+    </ul>
   </div>
 </template>
 
@@ -57,6 +55,13 @@
 
 .connections {
   flex-grow: 1;
+  list-style: none;
+  margin: 0;
+  padding: 1rem;
+}
+
+.connection {
+  margin-bottom: 1rem;
 }
 
 .form {
@@ -165,7 +170,7 @@ export default {
     };
 
     const deleteConnection = connection => {
-      if (confirm(`Delete favourite '${connection.nickname}'?\nYou can't undo this.`)) {
+      if (confirm(`Delete favourite '${connection.nickname || connection.host || 'localhost'}'?\nYou can't undo this.`)) {
         connections.splice(connections.findIndex(c => c.id === connection.id), 1);
       }
     }
