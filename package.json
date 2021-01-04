@@ -1,6 +1,6 @@
 {
   "name": "posticle",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Posticle application build with Electron",
   "author": {
     "name": "Daniel Smith",
