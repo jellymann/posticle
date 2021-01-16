@@ -1,4 +1,4 @@
-name: Build
+  name: Build
 
 on:
   push:
@@ -19,6 +19,14 @@ jobs:
       uses: actions/setup-node@master
       with:
         node-version: 12.18.4
+
+    - name: Install postgres on windows
+      if: runner.os == 'Windows'
+      run: |
+        wget https://get.enterprisedb.com/postgresql/postgresql-13.1-1-windows-x64-binaries.zip
+        Expand-Archive -LiteralPath postgresql-13.1-1-windows-x64-binaries.zip -DestinationPath ${{runner.temp}}
+        $OLDPATH = [System.Environment]::GetEnvironmentVariable('PATH','machine')
+        [Environment]::SetEnvironmentVariable('PATH', "$OLDPATH;${{runner.temp}}\pgsql\bin", 'machine')
         
     - name: Cache JavaScript dependencies
       uses: actions/cache@v1
