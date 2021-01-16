@@ -8,7 +8,7 @@
   <div class="content" ref="contentEl">
     <div v-if="loading">Loading...</div>
     <div v-if="!loading && data" class="content__table" ref="tableEl" :style="tableStyle">
-      <div class="content__thead">
+      <div class="content__thead" :style="{ height: `${HEADER_HEIGHT_REMS}rem` }">
         <div
           class="content__th"
           v-for="(field, index) in data.fields"
@@ -82,7 +82,6 @@
   position: relative;
 
   &__thead {
-    height: 2rem;
     display: flex;
     position: sticky;
     top: 0;
@@ -116,7 +115,6 @@
 
   &__tr {
     position: absolute;
-    height: 3rem;
   }
 }
 
@@ -196,6 +194,12 @@ import BackIcon from '../images/back.svg';
 import ForwardIcon from '../images/forward.svg';
 
 const ROWS_PER_PAGE = 1000;
+const ROW_HEIGHT_REMS = 3;
+const HEADER_HEIGHT_REMS = 2;
+
+function convertRemToPixels(rem) {
+  return rem * parseFloat(getComputedStyle(document.documentElement).fontSize);
+}
 
 export default {
   components: {
@@ -480,7 +484,8 @@ export default {
 
     const rowStyle = (index) => {
       return {
-        top: `${3 * index}rem`,
+        height: `${ROW_HEIGHT_REMS}rem`,
+        top: `${ROW_HEIGHT_REMS * index}rem`,
       };
     }
 
@@ -488,8 +493,8 @@ export default {
 
     const updateVisibleIndices = () => {
       if (rows.value) {
-        let minIndex = Math.max(0, Math.floor(contentEl.value.scrollTop / (3*16)));
-        let maxIndex = Math.min(rows.value.length - 1, Math.ceil((contentEl.value.scrollTop + contentEl.value.clientHeight) / (3*16)));
+        let minIndex = Math.max(0, Math.floor(contentEl.value.scrollTop / (convertRemToPixels(ROW_HEIGHT_REMS))));
+        let maxIndex = Math.min(rows.value.length - 1, Math.ceil((contentEl.value.scrollTop + contentEl.value.clientHeight) / (convertRemToPixels(ROW_HEIGHT_REMS))));
         let newIndices = [];
         for (let i = minIndex; i <= maxIndex; i++) {
           newIndices.push(i);
@@ -515,7 +520,7 @@ export default {
     const tableStyle = computed(() => {
       if (!rows.value) return {};
 
-      return { height: `${rows.value.length * 3}rem` };
+      return { height: `${rows.value.length * ROW_HEIGHT_REMS + HEADER_HEIGHT_REMS}rem` };
     });
 
     return {
@@ -547,6 +552,7 @@ export default {
       rowStyle,
       visibleIndices,
       tableStyle,
+      HEADER_HEIGHT_REMS,
     }
   }
 }
