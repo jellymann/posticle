@@ -20,18 +20,17 @@
       </div>
       <div class="content__tbody">
         <transition-group name="list">
-          <div
+          <TableRow
             v-for="index in visibleIndices"
             class="content__tr"
             :style="rowStyle(index)"
-            v-is="'table-row'"
             :key="index"
-            v-bind="rows[index]"
+            :row="rows[index]"
             :columnWidths="columnWidths"
             :isSelected="rowIsSelected(index)"
             @mousedown.prevent="mouseDownOnRow(index)"
             @mousemove.prevent="mouseMoveOnRow(index)"
-            @finishEdit="finishEditRow(rows[index], index)"></div>
+            @finishEdit="finishEditRow(rows[index], index)" />
         </transition-group>
       </div>
     </div>
@@ -405,17 +404,24 @@ export default {
       if (event.key !== 'Delete' && event.key !== 'Backspace') return;
       if (selectedIndexStart.value === -1 || selectedIndexEnd.value === -1) return;
 
+      let newRowsRemoved = false;
+
       for (let i = selectedIndexStart.value; i <= selectedIndexEnd.value; i++) {
         let row = rows.value[i];
         row.markForDelete = true;
         if (row.isNew) {
           delete rowsWithChanges[i];
+          newRowsRemoved = true;
         } else {
           rowsWithChanges[i] = {
             type: 'delete',
             change: row.cells.reduce((a, b) => ({ ...a, [b.column]: b.originalValue }), {})
           };
         }
+      }
+
+      if (newRowsRemoved) {
+        rows.value = rows.value.filter(r => !r.isNew || !r.markForDelete);
       }
 
       selectedIndexStart.value = -1;
@@ -446,7 +452,7 @@ export default {
         }
       });
       if (firstInsert !== -1) {
-        rows.value.length = parseInt(firstInsert, 10);
+        rows.value = rows.value.slice(0, firstInsert);
       }
       for (let x in rowsWithChanges) delete rowsWithChanges[x];
     };
@@ -454,14 +460,14 @@ export default {
     const newRow = () => {
       let newIndex = rows.value.length;
       if (firstInsert === -1) firstInsert = newIndex;
-      rows.value.push(reactive({
+      rows.value = [...rows.value, reactive({
         isNew: true,
         cells: data.value.fields.map(field => ({
           value: null,
           originalValue: null,
           column: field
         }))
-      }));
+      })];
       rowsWithChanges[newIndex] = {
         type: 'insert',
         change: {}
