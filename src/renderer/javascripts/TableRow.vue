@@ -1,11 +1,8 @@
 <template>
-  <div
-    v-show="!hidden"
-    :class="{ 'row': true, 'is-selected': isSelected, 'is-deleted': markForDelete }"
-  >
+  <div :class="{ 'row': true, 'is-selected': isSelected, 'is-deleted': row.markForDelete }">
     <div
+      v-for="(cell, index) in row.cells"
       :class="{ cell:true, 'cell--is-edited': cell.value !== cell.originalValue }"
-      v-for="(cell, index) in cells"
       :key="cell.column"
       @dblclick="editCell(cell)"
       :style="{ width: `${columnWidths[index] || 20 }rem` }"
@@ -84,9 +81,7 @@ import { ref, nextTick, computed, onMounted } from 'vue';
 
 export default {
   props: {
-    cells: Array,
-    markForDelete: Boolean,
-    isNew: Boolean,
+    row: Object,
     isSelected: Boolean,
     columnWidths: Array,
   },
@@ -94,7 +89,7 @@ export default {
     const input = ref(null);
 
     const stopEditing = () => {
-      props.cells.forEach(otherCell => {
+      props.row.cells.forEach(otherCell => {
         otherCell.isEditing = false;
       });
       emit('finishEdit');
@@ -109,7 +104,7 @@ export default {
     const handleKeyDown = (event) => {
       switch (event.key) {
       case 'Escape':
-        props.cells.forEach(cell => {
+        props.row.cells.forEach(cell => {
           if (cell.isEditing) cell.value = cell.originalValue;
           cell.isEditing = false;
         });
@@ -120,14 +115,14 @@ export default {
       case 'Tab':
         event.preventDefault();
         let editNext = false;
-        for (let i = 0; i < props.cells.length; i++) {
-          if (props.cells[i].isEditing) {
-            props.cells[i].isEditing = false;
+        for (let i = 0; i < props.row.cells.length; i++) {
+          if (props.row.cells[i].isEditing) {
+            props.row.cells[i].isEditing = false;
             editNext = true;
             continue;
           }
           if (editNext) {
-            props.cells[i].isEditing = true;
+            props.row.cells[i].isEditing = true;
             nextTick(focusInput);
             return;
           }
@@ -138,7 +133,7 @@ export default {
     }
 
     const editCell = (cell) => {
-      props.cells.forEach(otherCell => {
+      props.row.cells.forEach(otherCell => {
         otherCell.isEditing = false;
       });
       cell.isEditing = true
@@ -148,11 +143,10 @@ export default {
       nextTick(focusInput);
     }
 
-    const hidden = computed(() => props.isNew && props.markForDelete);
-
     onMounted(() => {
-      if (props.isNew) {
-        editCell(props.cells[0]);
+      if (props.row.isNew && !props.row.hasHadFocus) {
+        props.row.hasHadFocus = true;
+        editCell(props.row.cells[0]);
       }
 
       if (input.value) {
@@ -161,10 +155,8 @@ export default {
     });
 
     return {
-      ...props,
       editCell,
       input,
-      hidden,
       handleKeyDown
     };
   }
