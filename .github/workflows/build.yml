@@ -23,8 +23,8 @@ jobs:
     - name: Install postgres on windows
       if: runner.os == 'Windows'
       run: |
-        wget https://get.enterprisedb.com/postgresql/postgresql-13.1-1-windows-x64-binaries.zip
-        Expand-Archive -LiteralPath postgresql-13.1-1-windows-x64-binaries.zip -DestinationPath ${{runner.temp}}
+        Invoke-WebRequest -Uri "https://get.enterprisedb.com/postgresql/postgresql-13.1-1-windows-x64-binaries.zip" -OutFile ${{runner.temp}}\pgsql.zip
+        Expand-Archive -LiteralPath ${{runner.temp}}\pgsql.zip -DestinationPath ${{runner.temp}}
         $OLDPATH = [System.Environment]::GetEnvironmentVariable('PATH','machine')
         [Environment]::SetEnvironmentVariable('PATH', "$OLDPATH;${{runner.temp}}\pgsql\bin", 'machine')
         
