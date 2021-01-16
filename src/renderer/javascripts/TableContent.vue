@@ -7,26 +7,34 @@
   />
   <div class="content" ref="contentEl">
     <div v-if="loading">Loading...</div>
-    <table v-if="!loading && data" class="content__table" ref="tableEl">
-      <thead>
-        <tr>
-          <th class="content__th" v-for="field in data.fields" :key="field.name">
-            {{field}}
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="(row, index) in rows"
-          v-is="'table-row'"
-          :key="index"
-          v-bind="row"
-          :isSelected="rowIsSelected(index)"
-          @mousedown.prevent="mouseDownOnRow(index)"
-          @mousemove.prevent="mouseMoveOnRow(index)"
-          @finishEdit="finishEditRow(row, index)"></tr>
-      </tbody>
-    </table>
+    <div v-if="!loading && data" class="content__table" ref="tableEl" :style="tableStyle">
+      <div class="content__thead">
+        <div
+          class="content__th"
+          v-for="(field, index) in data.fields"
+          :key="field.name"
+          :style="{ width: `${columnWidths[index] || 20}rem` }"
+        >
+          {{field}}
+        </div>
+      </div>
+      <div class="content__tbody">
+        <transition-group name="list">
+          <div
+            v-for="index in visibleIndices"
+            class="content__tr"
+            :style="rowStyle(index)"
+            v-is="'table-row'"
+            :key="index"
+            v-bind="rows[index]"
+            :columnWidths="columnWidths"
+            :isSelected="rowIsSelected(index)"
+            @mousedown.prevent="mouseDownOnRow(index)"
+            @mousemove.prevent="mouseMoveOnRow(index)"
+            @finishEdit="finishEditRow(rows[index], index)"></div>
+        </transition-group>
+      </div>
+    </div>
   </div>
 
   <div v-if="hasChanges" class="changes-bar">
@@ -74,20 +82,23 @@
   overflow: auto;
   position: relative;
 
-  &__table {
-    border-collapse: collapse;
+  &__thead {
+    height: 2rem;
+    display: flex;
+    position: sticky;
+    top: 0;
+    width: max-content;
+    background: $panel-background;
+    z-index: 1;
   }
 
   &__th {
-    position: sticky;
-    top: 0;
-    background: $panel-background;
     border-right: $panel-border;
     font-weight: normal;
-    height: 2rem;
     padding: 0.25rem 0.5rem;
     text-align: left;
     z-index: 1;
+    flex: 0 0 auto;
 
     &::after {
       position: absolute;
@@ -99,6 +110,24 @@
       background-color: $panel-border-color;
     }
   }
+
+  &__tbody {
+    position: relative;
+  }
+
+  &__tr {
+    position: absolute;
+    height: 3rem;
+  }
+}
+
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.25s ease-out;
+}
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
 }
 
 .changes-bar {
@@ -193,6 +222,8 @@ export default {
 
     const currentPage = ref(1);
 
+    const columnWidths = reactive([]);
+
     const offset = computed(() => {
       return (currentPage.value - 1) * ROWS_PER_PAGE;
     });
@@ -240,6 +271,9 @@ export default {
             offset: offset.value,
             filters: JSON.parse(JSON.stringify(filters.value))
           }
+        });
+        data.value.fields.forEach(field => {
+          columnWidths.push(20);
         });
         let newRows = data.value.rows.map(row => reactive({
           cells: row.map((cell, index) => ({
@@ -438,6 +472,46 @@ export default {
       });
     };
 
+    const rowStyle = (index) => {
+      return {
+        top: `${3 * index}rem`,
+      };
+    }
+
+    const visibleIndices = ref([]);
+
+    const updateVisibleIndices = () => {
+      if (rows.value) {
+        let minIndex = Math.max(0, Math.floor(contentEl.value.scrollTop / (3*16)));
+        let maxIndex = Math.min(rows.value.length - 1, Math.ceil((contentEl.value.scrollTop + contentEl.value.clientHeight) / (3*16)));
+        let newIndices = [];
+        for (let i = minIndex; i <= maxIndex; i++) {
+          newIndices.push(i);
+        }
+        visibleIndices.value = newIndices;
+      } else {
+        visibleIndices.value = [];
+      }
+    }
+
+    watch(rows, updateVisibleIndices);
+
+    onMounted(() => {
+      contentEl.value.addEventListener('scroll', updateVisibleIndices, { passive: true });
+      window.addEventListener('resize', updateVisibleIndices, { passive: true });
+    });
+
+    onBeforeUnmount(() => {
+      contentEl.value.removeEventListener('scroll', updateVisibleIndices);
+      window.removeEventListener('resize', updateVisibleIndices);
+    });
+
+    const tableStyle = computed(() => {
+      if (!rows.value) return {};
+
+      return { height: `${rows.value.length * 3}rem` };
+    });
+
     return {
       data,
       rows,
@@ -462,7 +536,11 @@ export default {
       discardChanges,
       newRow,
       contentEl,
-      tableEl
+      tableEl,
+      columnWidths,
+      rowStyle,
+      visibleIndices,
+      tableStyle,
     }
   }
 }

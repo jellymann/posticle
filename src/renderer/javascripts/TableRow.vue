@@ -1,10 +1,14 @@
 <template>
-  <tr v-show="!hidden" :class="{ 'is-selected': isSelected, 'is-deleted': markForDelete }">
-    <td
+  <div
+    v-show="!hidden"
+    :class="{ 'row': true, 'is-selected': isSelected, 'is-deleted': markForDelete }"
+  >
+    <div
       :class="{ cell:true, 'cell--is-edited': cell.value !== cell.originalValue }"
-      v-for="cell in cells"
+      v-for="(cell, index) in cells"
       :key="cell.column"
       @dblclick="editCell(cell)"
+      :style="{ width: `${columnWidths[index] || 20 }rem` }"
     >
       <div class="cell__content">
         <textarea
@@ -18,16 +22,19 @@
         />
         <div class="cell__value" v-else>{{cell.value}}</div>
       </div>
-    </td>
-  </tr>
+    </div>
+  </div>
 </template>
 
 <style lang="scss" scoped>
+.row {
+  display: flex;
+}
+
 .cell {
-  height: 3rem;
-  max-width: 300px;
   border-bottom: $panel-border;
   border-right: $panel-border;
+  flex: 0 0 auto;
 
   &--is-edited {
     background: $edited-background;
@@ -86,7 +93,8 @@ export default {
     cells: Array,
     markForDelete: Boolean,
     isNew: Boolean,
-    isSelected: Boolean
+    isSelected: Boolean,
+    columnWidths: Array,
   },
   setup(props, { emit }) {
     const input = ref(null);
@@ -151,6 +159,10 @@ export default {
     onMounted(() => {
       if (props.isNew) {
         editCell(props.cells[0]);
+      }
+
+      if (input.value) {
+        input.value.select();
       }
     });
 
