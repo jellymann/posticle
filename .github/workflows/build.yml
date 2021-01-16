@@ -10,7 +10,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest, windows, linux]
+        os: [macos-latest, windows-latest, ubuntu-latest]
 
     steps:
     - uses: actions/checkout@v2
@@ -31,7 +31,17 @@ jobs:
     - name: Install JavaScript dependencies
       run: yarn install
 
-    - run: yarn run build
+    - name: Build for Windows
+      if: runner.os == 'Windows'
+      run: yarn run build windows
+
+    - name: Build for Windows
+      if: runner.os == 'macOS'
+      run: yarn run build mac
+
+    - name: Build for Windows
+      if: runner.os == 'Linux'
+      run: yarn run build linux
 
     - uses: actions/upload-artifact@v2
       with:
