@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  build:
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -27,6 +27,9 @@ jobs:
         Expand-Archive -LiteralPath ${{runner.temp}}\pgsql.zip -DestinationPath ${{runner.temp}}
         $OLDPATH = [System.Environment]::GetEnvironmentVariable('PATH','machine')
         [Environment]::SetEnvironmentVariable('PATH', "$OLDPATH;${{runner.temp}}\pgsql\bin", 'machine')
+
+    - name: Check Postgres
+      run: pg_config
         
     - name: Cache JavaScript dependencies
       uses: actions/cache@v1
