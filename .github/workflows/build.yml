@@ -1,0 +1,63 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+        
+    - name: Set up Node
+      uses: actions/setup-node@master
+      with:
+        node-version: 12.18.4
+
+    - name: Install postgres on windows
+      if: runner.os == 'Windows'
+      run: |
+        Invoke-WebRequest -Uri "https://get.enterprisedb.com/postgresql/postgresql-13.1-1-windows-x64.exe" -OutFile ${{runner.temp}}\pgsql.exe
+        ${{runner.temp}}\pgsql.exe --mode unattended
+
+    - name: Check Postgres
+      run: pg_config
+        
+    - name: Cache JavaScript dependencies
+      uses: actions/cache@v1
+      with:
+        path: node_modules
+        key: yarn-v1-${{ matrix.os }}-${{ hashFiles('.node-version') }}-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          yarn-v1-${{ matrix.os }}-${{ hashFiles('.node-version') }}-
+
+    - name: Install JavaScript dependencies
+      run: yarn install
+
+    - name: Build for Windows
+      if: runner.os == 'Windows'
+      run: yarn run build windows
+
+    - name: Build for macOS
+      if: runner.os == 'macOS'
+      run: yarn run build mac
+
+    - name: Build for Linux
+      if: runner.os == 'Linux'
+      run: yarn run build linux
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: packages
+        path: |
+          packages/*.exe
+          packages/*.snap
+          packages/*.AppImage
+          packages/*.dmg
+          packages/*.zip
