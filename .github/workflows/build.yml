@@ -35,11 +35,11 @@ jobs:
       if: runner.os == 'Windows'
       run: yarn run build windows
 
-    - name: Build for Windows
+    - name: Build for macOS
       if: runner.os == 'macOS'
       run: yarn run build mac
 
-    - name: Build for Windows
+    - name: Build for Linux
       if: runner.os == 'Linux'
       run: yarn run build linux
 
