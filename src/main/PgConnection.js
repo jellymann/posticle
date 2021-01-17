@@ -9,6 +9,7 @@ export default class PgConnection {
   constructor(config) {
     this.client = new Client(config);
     this.id = uuid();
+    this.favouriteId = config.favouriteId;
     CONNECTIONS[this.id] = this;
   }
 

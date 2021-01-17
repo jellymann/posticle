@@ -63,10 +63,9 @@ app.on('activate', () => {
 });
 
 let favouritesPath = path.join(app.getPath('userData'), 'favourites.json');
+console.log(`FAVOURITES PATH: ${favouritesPath}`);
 
-respondToRenderer('init', async () => {
-  let currentUsername = await username();
-
+async function getFavourites() {
   let favourites = [];
 
   try {
@@ -76,15 +75,41 @@ respondToRenderer('init', async () => {
     await fs.promises.writeFile(favouritesPath, JSON.stringify(favourites));
   }
 
-  return { favourites, username: currentUsername };
+  return favourites;
+}
+
+async function saveFavourites(favourites) {
+  return await fs.promises.writeFile(favouritesPath, JSON.stringify(favourites));
+}
+
+respondToRenderer('init', async () => {
+  return {
+    favourites: await getFavourites(),
+    username: await username()
+  };
 });
 
 respondToRenderer('saveFavourites', async (data) => {
   await fs.promises.writeFile(favouritesPath, JSON.stringify(data));
 });
 
+respondToRenderer('getFavourite', async (data) => {
+  let connection = PgConnection.find(data.connectionId);
+  let favourites = await getFavourites();
+
+  return favourites.find(x => x.id === connection.favouriteId);
+});
+
+respondToRenderer('saveFavourite', async (data) => {
+  let favourites = await getFavourites();
+
+  let newFavourites = [...favourites.filter(x => x.id !== data.id), data];
+  await saveFavourites(newFavourites);
+});
+
 respondToRenderer('connect', async (data) => {
   let connection = new PgConnection({
+    favouriteId: data.id,
     host: data.host,
     port: data.port,
     user: data.username,

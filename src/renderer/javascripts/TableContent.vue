@@ -13,7 +13,7 @@
           class="content__th"
           v-for="(field, index) in data.fields"
           :key="field.name"
-          :style="{ width: `${columnWidths[index] || DEFAULT_COLUMN_WIDTH}rem` }"
+          :style="{ width: `${columnWidths[index]}rem` }"
         >
           {{field}}
           <div class="content__resizer" @mousedown.prevent.left="startColumnResize(index, $event)">
@@ -293,9 +293,11 @@ export default {
       loading.value = true;
 
       try {
+        let fav = await callMain('getFavourite', { connectionId });
+
         data.value = await callMain('fetchData', {
           connectionId,
-          table: { ...props.table },
+          table: props.table,
           options: {
             limit: ROWS_PER_PAGE,
             offset: offset.value,
@@ -303,7 +305,11 @@ export default {
           }
         });
         data.value.fields.forEach(field => {
-          columnWidths.push(DEFAULT_COLUMN_WIDTH);
+          let width = DEFAULT_COLUMN_WIDTH;
+          if (fav.columnWidths && fav.columnWidths[props.table.name] && fav.columnWidths[props.table.name][field]) {
+            width = fav.columnWidths[props.table.name][field];
+          }
+          columnWidths.push(width);
         });
         let newRows = data.value.rows.map(row => reactive({
           cells: row.map((cell, index) => ({
@@ -417,7 +423,7 @@ export default {
 
       let m = {
         connectionId,
-        table: { ...props.table },
+        table: props.table,
         updates,
         deletes,
         inserts
@@ -574,6 +580,8 @@ export default {
 
       document.body.classList.remove('cursor-ew-resize');
 
+      saveColumnWidths();
+
       event.preventDefault();
     };
 
@@ -586,6 +594,18 @@ export default {
       columnWidths[index] = Math.max(originalColumnWidth + dxRems, MIN_COLUMN_WIDTH);
 
       event.preventDefault();
+    }
+
+    const saveColumnWidths = async () => {
+      let fav = await callMain('getFavourite', { connectionId });
+
+      fav.columnWidths = fav.columnWidths || {};
+      fav.columnWidths[props.table.name] = {};
+      data.value.fields.forEach((field, index) => {
+        fav.columnWidths[props.table.name][field] = columnWidths[index];
+      });
+
+      await callMain('saveFavourite', fav);
     }
 
     return {

@@ -143,7 +143,7 @@ export default {
 
     watch(connections, () => {
       if (initialised) {
-        callMain('saveFavourites', [...connections.map(c => ({ ...c, password: '' }))]);
+        callMain('saveFavourites', connections.map(c => ({ ...c, password: '' })));
       }
     });
 
