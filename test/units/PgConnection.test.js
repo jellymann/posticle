@@ -2,7 +2,7 @@ const { default: PgConnection } = require("../../src/main/PgConnection");
 
 jest.mock('pg');
 
-const ID_SCTRUCTURE = {
+const ID_STRUCTURE = {
   primaryKey: 'key',
   table: {
     schema: 'public',
@@ -32,7 +32,7 @@ describe('PgConnection', () => {
         }]
       }
 
-      let sql = new PgConnection().generateChangeQuery(changes, ID_SCTRUCTURE);
+      let sql = new PgConnection().generateChangeQuery(changes, ID_STRUCTURE);
       
       expect(sql).toEqual(`UPDATE "public"."foo" SET "bar"='baz' WHERE "key"=1234;`);
     });
@@ -46,7 +46,7 @@ describe('PgConnection', () => {
         deletes: [{ key: 1234 }, { key: 2345 }]
       }
 
-      let sql = new PgConnection().generateChangeQuery(changes, ID_SCTRUCTURE);
+      let sql = new PgConnection().generateChangeQuery(changes, ID_STRUCTURE);
 
       expect(sql).toEqual(`DELETE FROM "public"."foo" WHERE "key"=1234 OR "key"=2345;`);
     });
@@ -63,7 +63,7 @@ describe('PgConnection', () => {
         ]
       }
 
-      let sql = new PgConnection().generateChangeQuery(changes, ID_SCTRUCTURE);
+      let sql = new PgConnection().generateChangeQuery(changes, ID_STRUCTURE);
 
       expect(sql).toEqual(`INSERT INTO "public"."foo"("bar", "baz") VALUES('A', 'B');\n`+
                           `INSERT INTO "public"."foo"("bar", "baz") VALUES('C', 'D');`);
@@ -80,7 +80,7 @@ describe('PgConnection', () => {
         ]
       }
 
-      let sql = new PgConnection().generateChangeQuery(changes, ID_SCTRUCTURE);
+      let sql = new PgConnection().generateChangeQuery(changes, ID_STRUCTURE);
 
       expect(sql).toEqual(`INSERT INTO "public"."foo" VALUES(DEFAULT);`);
     });
@@ -102,7 +102,7 @@ describe('PgConnection', () => {
         ]
       }
 
-      let sql = new PgConnection().generateChangeQuery(changes, ID_SCTRUCTURE);
+      let sql = new PgConnection().generateChangeQuery(changes, ID_STRUCTURE);
 
       expect(sql).toEqual(`UPDATE "public"."foo" SET "bar"='baz' WHERE "key"=1234;\n`+
                           `DELETE FROM "public"."foo" WHERE "key"=1234 OR "key"=2345;\n`+
