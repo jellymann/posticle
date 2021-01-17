@@ -10,14 +10,20 @@
     <div v-if="!loading && data" class="content__table" ref="tableEl">
       <div class="content__thead" :style="{ height: `${HEADER_HEIGHT_REMS}rem` }">
         <div
-          class="content__th"
           v-for="(field, index) in data.fields"
           :key="field.name"
+          class="content__th"
           :style="{ width: `${columnWidths[index]}rem` }"
         >
           {{field}}
-          <div class="content__resizer" @mousedown.prevent.left="startColumnResize(index, $event)">
-          </div>
+        </div>
+        <div
+          v-for="(field, index) in data.fields"
+          :key="field.name"
+          class="content__resizer"
+          @mousedown.prevent.left="startColumnResize(index, $event)"
+          :style="resizerStyle(index)"
+        >
         </div>
       </div>
       <div class="content__tbody" :style="tbodyStyle">
@@ -110,7 +116,6 @@
     text-align: left;
     z-index: 1;
     flex: 0 0 auto;
-    position: relative;
     
     overflow: hidden;
     white-space: nowrap;
@@ -118,12 +123,11 @@
   }
 
   &__resizer {
-    width: 0.5rem;
     position: absolute;
-    right: -0.25rem;
     top: 0;
     height: 100%;
     background-color: transparent;
+    z-index: 2;
     cursor: ew-resize;
   }
 
@@ -223,6 +227,7 @@ const HEADER_HEIGHT_REMS = 2;
 const DEFAULT_COLUMN_WIDTH = 20;
 const MIN_COLUMN_WIDTH = 2;
 const CELL_PADDING = 1.25;
+const RESIZER_WIDTH = 0.5;
 
 export default {
   components: {
@@ -571,6 +576,13 @@ export default {
       };
     });
 
+    const resizerStyle = (index) => {
+      return {
+        left: `${columnWidths.slice(0, index + 1).reduce((a, b) => a + b, 0) - (index === data.value.fields.length - 1 ? RESIZER_WIDTH : RESIZER_WIDTH/2)}rem`,
+        width: `${RESIZER_WIDTH}rem`,
+      };;
+    }
+
     let resizingColumnIndex = ref(null);
     let originalMouseX = null;
     let originalColumnWidth = null;
@@ -652,6 +664,7 @@ export default {
       rowStyle,
       visibleIndices,
       tbodyStyle,
+      resizerStyle,
       HEADER_HEIGHT_REMS,
       startColumnResize,
     }
