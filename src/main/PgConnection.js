@@ -6,7 +6,7 @@ import buildWhereFromFilters from './buildWhereFromFilter';
 const CONNECTIONS = {};
 
 export default class PgConnection {
-  constructor(config) {
+  constructor(config = {}) {
     this.client = new Client(config);
     this.id = uuid();
     this.favouriteId = config.favouriteId;
