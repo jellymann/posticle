@@ -7,7 +7,7 @@
   />
   <div class="content" ref="contentEl">
     <div v-if="loading">Loading...</div>
-    <div v-if="!loading && data" class="content__table" ref="tableEl" :style="tableStyle">
+    <div v-if="!loading && data" class="content__table" ref="tableEl">
       <div class="content__thead" :style="{ height: `${HEADER_HEIGHT_REMS}rem` }">
         <div
           class="content__th"
@@ -20,7 +20,7 @@
           </div>
         </div>
       </div>
-      <div class="content__tbody">
+      <div class="content__tbody" :style="tbodyStyle">
         <transition-group name="list">
           <TableRow
             v-for="index in visibleIndices"
@@ -88,8 +88,19 @@
     position: sticky;
     top: 0;
     width: max-content;
+    min-width: 100%;
     background: $panel-background;
     z-index: 1;
+
+    &::after {
+      position: absolute;
+      content: '';
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: $panel-border-width;
+      background-color: $panel-border-color;
+    }
   }
 
   &__th {
@@ -104,16 +115,6 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-
-    &::after {
-      position: absolute;
-      content: '';
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: $panel-border-width;
-      background-color: $panel-border-color;
-    }
   }
 
   &__resizer {
@@ -211,24 +212,15 @@ import BackIcon from '../images/back.svg';
 import ForwardIcon from '../images/forward.svg';
 import dig from './dig';
 import deepSet from './deepSet';
+import { convertRemToPixels, convertPixelsToRem } from './rem';
+import getTextWidth from './getTextWidth';
 
 const ROWS_PER_PAGE = 1000;
 const ROW_HEIGHT_REMS = 3;
 const HEADER_HEIGHT_REMS = 2;
 const DEFAULT_COLUMN_WIDTH = 20;
 const MIN_COLUMN_WIDTH = 2;
-
-function getCurrentFontSize() {
-  return parseFloat(getComputedStyle(document.documentElement).fontSize);
-}
-
-function convertRemToPixels(rem) {
-  return rem * getCurrentFontSize();
-}
-
-function convertPixelsToRem(px) {
-  return px / getCurrentFontSize();
-}
+const CELL_PADDING = 1.25;
 
 export default {
   components: {
@@ -310,10 +302,24 @@ export default {
           }
         });
         columnWidths.length = 0;
-        data.value.fields.forEach(field => {
+        data.value.fields.forEach((field, index) => {
           let width = dig(fav,
             'columnWidths', connectionInfo.database, props.table.schema, props.table.name, field);
-          columnWidths.push(width || DEFAULT_COLUMN_WIDTH);
+          if (!width) {
+            let maxWidth = Math.max(MIN_COLUMN_WIDTH, convertPixelsToRem(getTextWidth(field)) + CELL_PADDING);
+            for (let i = 0; i < Math.min(data.value.rows.length, 10); i++) {
+              let w = convertPixelsToRem(getTextWidth(JSON.stringify(data.value.rows[i][index]))) + CELL_PADDING; // TODO: call formatting function when it exists
+              if (w > DEFAULT_COLUMN_WIDTH) {
+                maxWidth = DEFAULT_COLUMN_WIDTH;
+                break;
+              }
+              if (w > maxWidth) {
+                maxWidth = w;
+              }
+            }
+            width = maxWidth;
+          }
+          columnWidths.push(width);
         });
         let newRows = data.value.rows.map(row => reactive({
           cells: row.map((cell, index) => ({
@@ -554,10 +560,10 @@ export default {
       window.removeEventListener('resize', updateVisibleIndices);
     });
 
-    const tableStyle = computed(() => {
+    const tbodyStyle = computed(() => {
       if (!rows.value) return {};
 
-      return { height: `${rows.value.length * ROW_HEIGHT_REMS + HEADER_HEIGHT_REMS}rem` };
+      return { height: `${rows.value.length * ROW_HEIGHT_REMS}rem` };
     });
 
     let resizingColumnIndex = ref(null);
@@ -640,7 +646,7 @@ export default {
       columnWidths,
       rowStyle,
       visibleIndices,
-      tableStyle,
+      tbodyStyle,
       HEADER_HEIGHT_REMS,
       startColumnResize,
     }
