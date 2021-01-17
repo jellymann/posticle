@@ -29,3 +29,39 @@ svg {
   stroke: currentColor;
   fill: currentColor;
 }
+
+body.cursor-alias * {cursor: alias !important;}
+body.cursor-all-scroll * {cursor: all-scroll !important;}
+body.cursor-auto * {cursor: auto !important;}
+body.cursor-cell * {cursor: cell !important;}
+body.cursor-context-menu * {cursor: context-menu !important;}
+body.cursor-col-resize * {cursor: col-resize !important;}
+body.cursor-copy * {cursor: copy !important;}
+body.cursor-crosshair * {cursor: crosshair !important;}
+body.cursor-default * {cursor: default !important;}
+body.cursor-e-resize * {cursor: e-resize !important;}
+body.cursor-ew-resize * {cursor: ew-resize !important;}
+body.cursor-grab * {cursor: grab !important;}
+body.cursor-grabbing * {cursor: grabbing !important;}
+body.cursor-help * {cursor: help !important;}
+body.cursor-move * {cursor: move !important;}
+body.cursor-n-resize * {cursor: n-resize !important;}
+body.cursor-ne-resize * {cursor: ne-resize !important;}
+body.cursor-nesw-resize * {cursor: nesw-resize !important;}
+body.cursor-ns-resize * {cursor: ns-resize !important;}
+body.cursor-nw-resize * {cursor: nw-resize !important;}
+body.cursor-nwse-resize * {cursor: nwse-resize !important;}
+body.cursor-no-drop * {cursor: no-drop !important;}
+body.cursor-none * {cursor: none !important;}
+body.cursor-not-allowed * {cursor: not-allowed !important;}
+body.cursor-pointer * {cursor: pointer !important;}
+body.cursor-progress * {cursor: progress !important;}
+body.cursor-row-resize * {cursor: row-resize !important;}
+body.cursor-s-resize * {cursor: s-resize !important;}
+body.cursor-se-resize * {cursor: se-resize !important;}
+body.cursor-sw-resize * {cursor: sw-resize !important;}
+body.cursor-text * {cursor: text !important;}
+body.cursor-w-resize * {cursor: w-resize !important;}
+body.cursor-wait * {cursor: wait !important;}
+body.cursor-zoom-in * {cursor: zoom-in !important;}
+body.cursor-zoom-out * {cursor: zoom-out !important;}

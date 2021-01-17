@@ -16,7 +16,7 @@
           :style="{ width: `${columnWidths[index] || DEFAULT_COLUMN_WIDTH}rem` }"
         >
           {{field}}
-          <div v-if="index !== data.fields.length - 1" class="content__resizer" @mousedown.prevent.left="startColumnResize(index, $event)">
+          <div class="content__resizer" @mousedown.prevent.left="startColumnResize(index, $event)">
           </div>
         </div>
       </div>
@@ -560,6 +560,8 @@ export default {
 
       document.addEventListener('mouseup', stopResizingColumn, false);
       document.addEventListener('mousemove', resizeColumn, false);
+
+      document.body.classList.add('cursor-ew-resize');
     };
 
     const stopResizingColumn = (event) => {
@@ -569,6 +571,8 @@ export default {
 
       document.removeEventListener('mouseup', stopResizingColumn);
       document.removeEventListener('mousemove', resizeColumn);
+
+      document.body.classList.remove('cursor-ew-resize');
 
       event.preventDefault();
     };
