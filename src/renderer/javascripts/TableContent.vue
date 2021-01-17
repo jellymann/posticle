@@ -209,6 +209,8 @@ import TableRow from "./TableRow.vue";
 import PlusIcon from '../images/plus.svg';
 import BackIcon from '../images/back.svg';
 import ForwardIcon from '../images/forward.svg';
+import dig from './dig';
+import deepSet from './deepSet';
 
 const ROWS_PER_PAGE = 1000;
 const ROW_HEIGHT_REMS = 3;
@@ -289,11 +291,14 @@ export default {
     const contentEl = ref(null);
     const tableEl = ref(null);
 
+    let connectionInfo = null;
+
     const loadDataAndStructure = async () => {
       loading.value = true;
 
       try {
         let fav = await callMain('getFavourite', { connectionId });
+        connectionInfo = await callMain('getConnectionInfo', { connectionId });
 
         data.value = await callMain('fetchData', {
           connectionId,
@@ -304,12 +309,11 @@ export default {
             filters: JSON.parse(JSON.stringify(filters.value))
           }
         });
+        columnWidths.length = 0;
         data.value.fields.forEach(field => {
-          let width = DEFAULT_COLUMN_WIDTH;
-          if (fav.columnWidths && fav.columnWidths[props.table.name] && fav.columnWidths[props.table.name][field]) {
-            width = fav.columnWidths[props.table.name][field];
-          }
-          columnWidths.push(width);
+          let width = dig(fav,
+            'columnWidths', connectionInfo.database, props.table.schema, props.table.name, field);
+          columnWidths.push(width || DEFAULT_COLUMN_WIDTH);
         });
         let newRows = data.value.rows.map(row => reactive({
           cells: row.map((cell, index) => ({
@@ -599,10 +603,10 @@ export default {
     const saveColumnWidths = async () => {
       let fav = await callMain('getFavourite', { connectionId });
 
-      fav.columnWidths = fav.columnWidths || {};
-      fav.columnWidths[props.table.name] = {};
+      let path = ['columnWidths', connectionInfo.database, props.table.schema, props.table.name];
+      deepSet(fav, {}, ...path);
       data.value.fields.forEach((field, index) => {
-        fav.columnWidths[props.table.name][field] = columnWidths[index];
+        deepSet(fav, columnWidths[index], ...path, field);
       });
 
       await callMain('saveFavourite', fav);
