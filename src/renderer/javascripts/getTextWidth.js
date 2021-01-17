@@ -16,5 +16,8 @@ export default function getTextWidth(string, { fontSize = getFontSize(), fontFam
   text.style.whiteSpace = 'no-wrap';
   text.textContent = string;
 
-  return Math.ceil(text.clientWidth);
+  let w = Math.ceil(text.clientWidth);
+  text.remove();
+
+  return w;
 }
