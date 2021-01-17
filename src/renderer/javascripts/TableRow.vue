@@ -5,7 +5,7 @@
       :class="{ cell:true, 'cell--is-edited': cell.value !== cell.originalValue }"
       :key="cell.column"
       @dblclick="editCell(cell)"
-      :style="{ width: `${columnWidths[index] || 20 }rem` }"
+      :style="{ width: `${columnWidths[index]}rem` }"
     >
       <div class="cell__content">
         <textarea

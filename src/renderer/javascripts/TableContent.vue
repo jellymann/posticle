@@ -13,9 +13,11 @@
           class="content__th"
           v-for="(field, index) in data.fields"
           :key="field.name"
-          :style="{ width: `${columnWidths[index] || 20}rem` }"
+          :style="{ width: `${columnWidths[index] || DEFAULT_COLUMN_WIDTH}rem` }"
         >
           {{field}}
+          <div v-if="index !== data.fields.length - 1" class="content__resizer" @mousedown.prevent.left="startColumnResize(index, $event)">
+          </div>
         </div>
       </div>
       <div class="content__tbody">
@@ -97,6 +99,11 @@
     text-align: left;
     z-index: 1;
     flex: 0 0 auto;
+    position: relative;
+    
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 
     &::after {
       position: absolute;
@@ -107,6 +114,16 @@
       height: $panel-border-width;
       background-color: $panel-border-color;
     }
+  }
+
+  &__resizer {
+    width: 0.5rem;
+    position: absolute;
+    right: -0.25rem;
+    top: 0;
+    height: 100%;
+    background-color: transparent;
+    cursor: ew-resize;
   }
 
   &__tbody {
@@ -196,9 +213,19 @@ import ForwardIcon from '../images/forward.svg';
 const ROWS_PER_PAGE = 1000;
 const ROW_HEIGHT_REMS = 3;
 const HEADER_HEIGHT_REMS = 2;
+const DEFAULT_COLUMN_WIDTH = 20;
+const MIN_COLUMN_WIDTH = 2;
+
+function getCurrentFontSize() {
+  return parseFloat(getComputedStyle(document.documentElement).fontSize);
+}
 
 function convertRemToPixels(rem) {
-  return rem * parseFloat(getComputedStyle(document.documentElement).fontSize);
+  return rem * getCurrentFontSize();
+}
+
+function convertPixelsToRem(px) {
+  return px / getCurrentFontSize();
 }
 
 export default {
@@ -276,7 +303,7 @@ export default {
           }
         });
         data.value.fields.forEach(field => {
-          columnWidths.push(20);
+          columnWidths.push(DEFAULT_COLUMN_WIDTH);
         });
         let newRows = data.value.rows.map(row => reactive({
           cells: row.map((cell, index) => ({
@@ -523,6 +550,40 @@ export default {
       return { height: `${rows.value.length * ROW_HEIGHT_REMS + HEADER_HEIGHT_REMS}rem` };
     });
 
+    let resizingColumnIndex = ref(null);
+    let originalMouseX = null;
+    let originalColumnWidth = null;
+    const startColumnResize = (index, event) => {
+      resizingColumnIndex.value = index;
+      originalColumnWidth = columnWidths[index];
+      originalMouseX = event.clientX;
+
+      document.addEventListener('mouseup', stopResizingColumn, false);
+      document.addEventListener('mousemove', resizeColumn, false);
+    };
+
+    const stopResizingColumn = (event) => {
+      if (!event.button === 0) return;
+
+      resizingColumnIndex.value = null;
+
+      document.removeEventListener('mouseup', stopResizingColumn);
+      document.removeEventListener('mousemove', resizeColumn);
+
+      event.preventDefault();
+    };
+
+    const resizeColumn = (event) => {
+      let { clientX } = event;
+      let dx = clientX - originalMouseX;
+
+      let index = resizingColumnIndex.value;
+      let dxRems = convertPixelsToRem(dx);
+      columnWidths[index] = Math.max(originalColumnWidth + dxRems, MIN_COLUMN_WIDTH);
+
+      event.preventDefault();
+    }
+
     return {
       data,
       rows,
@@ -553,6 +614,7 @@ export default {
       visibleIndices,
       tableStyle,
       HEADER_HEIGHT_REMS,
+      startColumnResize,
     }
   }
 }
