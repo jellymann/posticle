@@ -1,4 +1,5 @@
 import { v4 as uuid } from 'uuid';
+import deepClone from './deepClone';
 
 export default function callMain(eventName, eventData) {
   return new Promise((resolve, reject) => {
@@ -12,6 +13,6 @@ export default function callMain(eventName, eventData) {
       }
     }
     window.addEventListener(eventId, callback, false);
-    window.postMessage({ eventName, eventData, eventId });
+    window.postMessage({ eventName, eventData: deepClone(eventData), eventId });
   });
 }

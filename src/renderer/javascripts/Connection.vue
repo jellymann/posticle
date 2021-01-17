@@ -175,7 +175,7 @@ export default {
     const connect = async () => {
       if (props.isEditing) emit('done');
       try {
-        let data = await callMain('connect', { ...connection });
+        let data = await callMain('connect', connection);
         window.location.hash = `database/${data.id}`;
       } catch (e) {
         error.value = e.message;

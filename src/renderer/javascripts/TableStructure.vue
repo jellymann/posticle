@@ -70,7 +70,7 @@ export default {
       try {
         structure.value = await callMain('fetchStructure', {
           connectionId,
-          table: { ...table }
+          table
         });
       } catch (error) {
         console.error(error);
