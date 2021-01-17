@@ -129,6 +129,8 @@
 
   &__tbody {
     position: relative;
+    --border-width: #{$panel-border-width};
+    --border-color: #{$panel-border-color};
   }
 
   &__tr {
@@ -563,7 +565,10 @@ export default {
     const tbodyStyle = computed(() => {
       if (!rows.value) return {};
 
-      return { height: `${rows.value.length * ROW_HEIGHT_REMS}rem` };
+      return {
+        height: `${rows.value.length * ROW_HEIGHT_REMS}rem`,
+        background: `repeating-linear-gradient(transparent, transparent calc(${ROW_HEIGHT_REMS}rem - var(--border-width)), var(--border-color) calc(${ROW_HEIGHT_REMS}rem - var(--border-width)), var(--border-color) ${ROW_HEIGHT_REMS}rem)`,
+      };
     });
 
     let resizingColumnIndex = ref(null);
