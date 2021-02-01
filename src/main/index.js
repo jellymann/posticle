@@ -122,6 +122,13 @@ respondToRenderer('connect', async (data) => {
   return { id: connection.id, error: false };
 });
 
+respondToRenderer('fetchDatabases', async (data) => {
+  let connection = PgConnection.find(data.connectionId);
+  if (!connection) return;
+
+  return await connection.fetchDatabases();
+});
+
 respondToRenderer('fetchTables', async (data) => {
   let connection = PgConnection.find(data.connectionId);
   if (!connection) return;
