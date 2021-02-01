@@ -9,9 +9,10 @@
 .item {
   $block: &;
   cursor: pointer;
-  margin: 0.5rem 0;
+  margin: 0.25rem 0;
   display: flex;
-  padding: 0.5rem 1rem;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
 
   &:hover {
     background-color: $highlight-background;

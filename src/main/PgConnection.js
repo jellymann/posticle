@@ -31,6 +31,15 @@ export default class PgConnection {
     return result.rows[0].server_version;
   }
 
+  async fetchDatabases() {
+    let result = await this.client.query(`
+      SELECT datname FROM pg_database
+      WHERE datistemplate = false;
+    `);
+
+    return result.rows.map(x => x.datname);
+  }
+
   async fetchTables() {
     let publicTables = await this.fetchPublicTables();
     let otherTables = await this.fetchOtherTables();

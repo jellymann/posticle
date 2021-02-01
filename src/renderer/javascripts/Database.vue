@@ -12,7 +12,10 @@
         <schema v-model="currentTable" />
       </div>
       <div class="main__content">
-        <table-view :table="currentTable" v-if="currentTable" />
+        <!-- TODO: probably use an actual router for this :/ -->
+        <database-list v-if="showDatabases && !currentTable" />
+        <table-list v-if="!showDatabases && !currentTable" @openTable="currentTable = $event"/>
+        <table-view :table="currentTable" v-if="!showDatabases && currentTable" />
       </div>
       <div class="main__right" v-show="rightBarOpen"></div>
     </div>
@@ -57,16 +60,23 @@
 </style>
 
 <script>
-import { provide, ref, watchEffect } from 'vue';
-import callMain from './callMain';
+import { provide, ref } from 'vue';
 import Schema from './Schema.vue';
+import DatabaseList from './DatabaseList.vue'
+import TableList from './TableList.vue'
 import TableView from './TableView.vue'
 import DatabaseNav from './DatabaseNav.vue';
 
 export default {
-  components: { Schema, TableView, DatabaseNav },
+  components: {
+    Schema,
+    DatabaseList,
+    TableList,
+    TableView,
+    DatabaseNav,
+  },
   props: {
-    id: String
+    id: String,
   },
   setup(props) {
     const eventTarget = new EventTarget();
@@ -74,15 +84,19 @@ export default {
     provide('connectionId', props.id);
 
     const currentTable = ref(null);
+    const showDatabases = ref(false);
     const leftBarOpen = ref(true);
     const rightBarOpen = ref(false);
 
     const breadcrumbSelected = (breadcrumb) => {
       switch (breadcrumb) {
         case 'host':
+          currentTable.value = null;
+          showDatabases.value = true;
           break;
         case 'database':
           currentTable.value = null;
+          showDatabases.value = false;
           break;
       }
     };
@@ -90,15 +104,16 @@ export default {
     const refresh = () => {
       const refreshEvent = new CustomEvent('refresh');
       eventTarget.dispatchEvent(refreshEvent);
-    }
+    };
 
     return {
       currentTable,
       leftBarOpen,
       rightBarOpen,
       breadcrumbSelected,
-      refresh
+      refresh,
+      showDatabases,
     };
-  }
-}
+  },
+};
 </script>
