@@ -91,9 +91,10 @@ export default {
     const rightBarOpen = ref(false);
     const connected = ref(true);
 
-    const breadcrumbSelected = (breadcrumb) => {
+    const breadcrumbSelected = async (breadcrumb) => {
       switch (breadcrumb) {
         case 'host':
+          await useDatabase('postgres');
           currentTable.value = null;
           showDatabases.value = true;
           break;
@@ -110,12 +111,16 @@ export default {
     };
 
     const openDatabase = async (database) => {
-      connected.value = false;
-      await callMain('useDatabase', { connectionId: props.id, database });
+      await useDatabase(database);
       showDatabases.value = false;
       currentTable.value = null;
-      connected.value = true;
     };
+
+    const useDatabase = async (database) => {
+      connected.value = false;
+      await callMain('useDatabase', { connectionId: props.id, database });
+      connected.value = true;
+    }
 
     return {
       currentTable,
