@@ -14,11 +14,11 @@
         <posticle-icon class="nav__breadcrumb-icon nav__breadcrumb-icon--host" />
         {{ connection ? connection.host : '...' }}
       </button>
-      <button class="nav__breadcrumb" @click="breadcrumbDatabase" v-if="connection && connection.database">
+      <button class="nav__breadcrumb" @click="breadcrumbDatabase" v-if="connection && connection.database && !showDatabases">
         <database-icon class="nav__breadcrumb-icon nav__breadcrumb-icon--database" />
         {{ connection ? connection.database : '...' }}
       </button>
-      <button class="nav__breadcrumb" v-if="connection && table">
+      <button class="nav__breadcrumb" v-if="connection && table && !showDatabases">
         <table-icon :class="{ 'nav__breadcrumb-icon': true, [`nav__breadcrumb-icon--${tableType}`]: true }" />
         {{ table.name }}
       </button>
@@ -205,6 +205,7 @@ export default {
   },
   props: {
     table: Object,
+    showDatabases: Boolean,
     leftBarOpen: Boolean,
     rightBarOpen: Boolean
   },
