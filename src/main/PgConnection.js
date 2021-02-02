@@ -7,6 +7,7 @@ const CONNECTIONS = {};
 
 export default class PgConnection {
   constructor(config = {}) {
+    this.config = config;
     this.client = new Client(config);
     this.id = uuid();
     this.favouriteId = config.favouriteId;
@@ -38,6 +39,12 @@ export default class PgConnection {
     `);
 
     return result.rows.map(x => x.datname);
+  }
+
+  async useDatabase(database) {
+    await this.client.end();
+    this.client = new Client({ ...this.config, database });
+    await this.client.connect();
   }
 
   async fetchTables() {

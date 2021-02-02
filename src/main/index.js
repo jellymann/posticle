@@ -129,6 +129,14 @@ respondToRenderer('fetchDatabases', async (data) => {
   return await connection.fetchDatabases();
 });
 
+respondToRenderer('useDatabase', async (data) => {
+  let connection = PgConnection.find(data.connectionId);
+  if (!connection) return;
+
+  await connection.useDatabase(data.database);
+  return {};
+});
+
 respondToRenderer('fetchTables', async (data) => {
   let connection = PgConnection.find(data.connectionId);
   if (!connection) return;
