@@ -1,15 +1,34 @@
 <template>
   <div class="scroll">
     <div v-if="loading">Loading...</div>
-    <IconGrid
-      v-if="!loading"
-      :items="publicTables.map(tableItem)"
-      @open="$emit('openTable', $event.table)"
-    >
-      <template #icon="{ item }">
-        <table-big-icon :class="`icon ${tableIconClass(item.table)}`"/>
-      </template>
-    </IconGrid>
+    <template v-if="!loading">
+      <IconGrid
+        v-if="publicTables.length > 0"
+        class="grid"
+        :items="publicTables.map(tableItem)"
+        @open="$emit('openTable', $event.table)"
+      >
+        <template #icon="{ item }">
+          <table-big-icon :class="`icon ${tableIconClass(item.table)}`"/>
+        </template>
+      </IconGrid>
+      <div v-for="schema in otherSchemas" :key="schema.name" :class="{ 'schema': true, 'open ': schema.isOpen }">
+        <button @click="toggleSchema(schema)" :class="{ 'schema-button': true, 'schema-button--expanded': schema.isOpen }">
+          <Triangle class="schema-button__triangle" />
+          <SchemaIcon class="schema-button__icon" />
+          <span class="schema-button__label">{{ schema.name }}</span>
+        </button>
+        <IconGrid
+          v-if="schema.isOpen"
+          :items="schema.tables.map(tableItem)"
+          @open="$emit('openTable', $event.table)"
+        >
+          <template #icon="{ item }">
+            <table-big-icon :class="`icon ${tableIconClass(item.table)}`"/>
+          </template>
+        </IconGrid>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -29,6 +48,39 @@
     fill: $view-icon-color
   }
 }
+
+.grid {
+  margin-bottom: 2rem;
+}
+
+.schema-button {
+  $block: &;
+  background: none;
+  border: none;
+  display: flex;
+  padding: 0;
+  margin-bottom: 1rem;
+  align-items: center;
+
+  &--expanded {
+    #{$block}__triangle {
+      transform: rotate(90deg);
+    }
+  }
+
+  &__triangle {
+    width: 1rem;
+    height: auto;
+    fill: map-get($gray, default);
+    margin-right: 0.25rem;
+
+    transition: transform 250ms ease-in-out;
+  }
+
+  &__icon {
+    margin-right: 0.25rem;
+  }
+}
 </style>
 
 <script>
@@ -38,11 +90,15 @@ import callMain from './callMain';
 import IconGrid from './IconGrid.vue';
 
 import TableBigIcon from '../images/table-big.svg';
+import SchemaIcon from '../images/schema.svg';
+import Triangle from '../images/triangle.svg';
 
 export default {
   components: {
     IconGrid,
     TableBigIcon,
+    SchemaIcon,
+    Triangle,
   },
   emits: ['openTable'],
   setup(_props, { emit }) {
