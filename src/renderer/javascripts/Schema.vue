@@ -1,30 +1,32 @@
 <template>
-  <div v-if="loading">Loading...</div>
-    <ul v-else class="tables">
-      <li
-        v-for="table in publicTables"
-        :key="table.name"
-        :class="{ 'tables__table': true, 'tables__table--current': table === currentTable }"
-      >
-        <schema-item :item="table" type="table" @select="selectTable(table)" />
-      </li>
-      <li
-        v-for="schema in otherSchemas"
-        :key="schema.name"
-        :class="{ 'tables__schema': true, 'tables__schema--open': schema.isOpen }"
-      >
-        <schema-item :item="schema" type="schema" @select="toggleSchema(schema)" />
-        <ul class="tables__schema-tables">
-          <li
-            v-for="table in schema.tables"
-            :key="table.name"
-            :class="{ 'tables__table': true, 'tables__table--current': table === currentTable }"
-          >
-            <schema-item :item="table" type="table" @select="selectTable(table)" />
-          </li>
-        </ul>
-      </li>
-    </ul>
+  <div v-if="loading">
+    Loading...
+  </div>
+  <ul v-else class="tables">
+    <li
+      v-for="table in publicTables"
+      :key="table.name"
+      :class="{ 'tables__table': true, 'tables__table--current': table === currentTable }"
+    >
+      <schema-item :item="table" type="table" @select="selectTable(table)" />
+    </li>
+    <li
+      v-for="schema in otherSchemas"
+      :key="schema.name"
+      :class="{ 'tables__schema': true, 'tables__schema--open': schema.isOpen }"
+    >
+      <schema-item :item="schema" type="schema" @select="toggleSchema(schema)" />
+      <ul class="tables__schema-tables">
+        <li
+          v-for="table in schema.tables"
+          :key="table.name"
+          :class="{ 'tables__table': true, 'tables__table--current': table === currentTable }"
+        >
+          <schema-item :item="table" type="table" @select="selectTable(table)" />
+        </li>
+      </ul>
+    </li>
+  </ul>
 </template>
 
 <style lang="scss" scoped>
@@ -62,8 +64,9 @@ export default {
     SchemaItem
   },
   props: {
-    modelValue: Object
+    modelValue: { type: Object, default: null }, 
   },
+  emits: ['update:modelValue'],
   setup(props, { emit }) {
     const connectionId = inject('connectionId');
     const eventTarget = inject('eventTarget');
@@ -85,7 +88,7 @@ export default {
         otherSchemas.value = [];
       } finally {
         loading.value = false;
-      };
+      }
     }
     loadTables();
 

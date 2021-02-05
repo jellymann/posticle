@@ -20,7 +20,7 @@
       <div class="form__row">
         <div class="form__field">
           <label class="form__label">Username</label>
-          <input class="form__input" v-model="connection.username" :placeholder="username"/>
+          <input class="form__input" v-model="connection.username" :placeholder="username" />
         </div>
       </div>
       <div class="form__row">
@@ -42,15 +42,25 @@
           :options="['Duplicate', 'Delete']"
           @select="optionSelected"
         />
-        <button class="form__action" @click="$emit('done')">Done</button>
-        <button class="form__action" @click="connect">Connect</button>
+        <button class="form__action" @click="$emit('done')">
+          Done
+        </button>
+        <button class="form__action" @click="connect">
+          Connect
+        </button>
       </div>
     </div>
     <div v-if="!isEditing" class="summary">
       <div class="summary__row">
-        <div class="summary__nickname">{{connection.nickname || connection.host || 'localhost'}}</div>
-        <button class="summary__action" @click="$emit('edit')">Edit</button>
-        <button class="summary__action" @click="connect">Connect</button>
+        <div class="summary__nickname">
+          {{ connection.nickname || connection.host || 'localhost' }}
+        </div>
+        <button class="summary__action" @click="$emit('edit')">
+          Edit
+        </button>
+        <button class="summary__action" @click="connect">
+          Connect
+        </button>
       </div>
       <div class="summary__row">
         <div v-if="error" class="summary__error">
@@ -156,26 +166,25 @@
 </style>
 
 <script>
-import { ref, reactive, onBeforeUnmount } from 'vue';
+import { ref, reactive } from 'vue';
 import callMain from './callMain';
 import DropdownMenu from './DropdownMenu.vue';
 
 export default {
   components: { DropdownMenu },
   props: {
-    connection: Object,
+    connection: { type: Object, required: true },
     isEditing: Boolean,
-    username: String,
+    username: { type: String, default: '' },
   },
   emits: ['edit', 'done', 'duplicate', 'delete'],
   setup(props, { emit }) {
     const error = ref(null);
-    let connection = reactive(props.connection);
 
     const connect = async () => {
       if (props.isEditing) emit('done');
       try {
-        let data = await callMain('connect', connection);
+        let data = await callMain('connect', props.connection);
         window.location.hash = `database/${data.id}`;
       } catch (e) {
         error.value = e.message;
@@ -190,7 +199,6 @@ export default {
     }
 
     return {
-      connection,
       error,
       connect,
       optionSelected,

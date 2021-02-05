@@ -78,7 +78,7 @@ export default {
     DatabaseNav,
   },
   props: {
-    id: String,
+    id: { type: String, required: true },
   },
   setup(props) {
     const eventTarget = new EventTarget();

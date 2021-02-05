@@ -1,5 +1,5 @@
 <template>
-  <a @click.prevent="click" :class="{ 'item': true, [`item--${type}`]: true }">
+  <a @click.prevent="click" :class="{ 'item': true, [`item--${itemType}`]: true }">
     <component :is="icon" class="item__icon" />
     <span class="item__name">{{ item.name }}</span>
   </a>
@@ -58,22 +58,23 @@ import SchemaIcon from '../images/schema.svg';
 export default {
   components: { TableIcon,SchemaIcon },
   props: {
-    item: Object,
-    type: String
+    item: { type: Object, required: true },
+    type: { type: String, required: true },
   },
+  emits: ['select'],
   setup(props, { emit }) {
     const click = () => {
       emit('select');
     }
 
     const icon = props.type === 'schema' ? 'schema-icon' : 'table-icon';
-    const type = props.type === 'schema' ? 'schema' : (
+    const itemType = props.type === 'schema' ? 'schema' : (
       props.item.type === 'VIEW' ? 'view' : 'table'
     );
 
     return {
       ...props,
-      type,
+      itemType,
       icon,
       click
     }

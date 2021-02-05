@@ -2,8 +2,12 @@
   <div class="main">
     <div class="welcome">
       <PosticleIcon viewBox="0 2 22 22" />
-      <div class="version">Version 0.0.0</div>
-      <button @click="newConnection">New Favourite</button>
+      <div class="version">
+        Version 0.0.0
+      </div>
+      <button @click="newConnection">
+        New Favourite
+      </button>
     </div>
     <ul class="connections">
       <li v-for="connection in connections" :key="connection.id" class="connection">
@@ -121,7 +125,7 @@
 </style>
 
 <script>
-import { ref, reactive, onBeforeUnmount, watch } from 'vue';
+import { ref, reactive, watch } from 'vue';
 import callMain from './callMain';
 import Connection from './Connection.vue';
 import PosticleIcon from '../images/posticle.svg';
@@ -129,7 +133,7 @@ import { v4 as uuid } from 'uuid';
 
 export default {
   components: { Connection, PosticleIcon },
-  setup(props) {
+  setup() {
     let initialised = false;
     let connections = reactive([]);
     let currentUsername = ref('');

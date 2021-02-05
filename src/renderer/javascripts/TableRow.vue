@@ -10,14 +10,16 @@
       <div class="cell__content">
         <textarea
           class="cell__input"
-          ref='input'
+          ref="input"
           v-if="cell.isEditing"
           v-model="cell.value"
           @mousedown.stop
           @mousemove.stop
           @keydown.stop="handleKeyDown"
         />
-        <div class="cell__value" v-else>{{cell.value}}</div>
+        <div class="cell__value" v-else>
+          {{ cell.value }}
+        </div>
       </div>
     </div>
   </div>
@@ -77,14 +79,15 @@
 </style>
 
 <script>
-import { ref, nextTick, computed, onMounted } from 'vue';
+import { ref, nextTick, onMounted } from 'vue';
 
 export default {
   props: {
-    row: Object,
+    row: { type: Object, required: true },
     isSelected: Boolean,
-    columnWidths: Array,
+    columnWidths: { type: Array, required: true },
   },
+  emits: ['finish-edit'],
   setup(props, { emit }) {
     const input = ref(null);
 
@@ -92,7 +95,7 @@ export default {
       props.row.cells.forEach(otherCell => {
         otherCell.isEditing = false;
       });
-      emit('finishEdit');
+      emit('finish-edit');
       document.removeEventListener('mousedown', stopEditing);
     }
 
@@ -108,26 +111,31 @@ export default {
           if (cell.isEditing) cell.value = cell.originalValue;
           cell.isEditing = false;
         });
+        event.preventDefault();
+        stopEditing();
+        break;
       case 'Enter':
         event.preventDefault();
         stopEditing();
         break;
       case 'Tab':
-        event.preventDefault();
-        let editNext = false;
-        for (let i = 0; i < props.row.cells.length; i++) {
-          if (props.row.cells[i].isEditing) {
-            props.row.cells[i].isEditing = false;
-            editNext = true;
-            continue;
+        {
+          event.preventDefault();
+          let editNext = false;
+          for (let i = 0; i < props.row.cells.length; i++) {
+            if (props.row.cells[i].isEditing) {
+              props.row.cells[i].isEditing = false;
+              editNext = true;
+              continue;
+            }
+            if (editNext) {
+              props.row.cells[i].isEditing = true;
+              nextTick(focusInput);
+              return;
+            }
           }
-          if (editNext) {
-            props.row.cells[i].isEditing = true;
-            nextTick(focusInput);
-            return;
-          }
+          stopEditing();
         }
-        stopEditing();
         break;
       }
     }

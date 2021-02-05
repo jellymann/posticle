@@ -1,13 +1,15 @@
 <template>
   <div class="scroll">
-    <div v-if="loading">Loading...</div>
+    <div v-if="loading">
+      Loading...
+    </div>
     <IconGrid
       v-if="!loading"
       :items="databases.map(databaseItem)"
-      @open="$emit('openDatabase', $event.key)"
+      @open="$emit('open-database', $event.key)"
     >
       <template #icon>
-        <database-big-icon class="icon"/>
+        <database-big-icon class="icon" />
       </template>
     </IconGrid>
   </div>
@@ -38,8 +40,8 @@ export default {
     IconGrid,
     DatabaseBigIcon,
   },
-  emits: ['openDatabase'],
-  setup(_props, { emit }) {
+  emits: ['open-database'],
+  setup() {
     const connectionId = inject('connectionId');
     const eventTarget = inject('eventTarget');
 
@@ -55,7 +57,7 @@ export default {
         databases.value = [];
       } finally {
         loading.value = false;
-      };
+      }
     }
     loadDatabases();
 

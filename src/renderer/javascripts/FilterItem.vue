@@ -1,13 +1,21 @@
 <template>
   <div class="filter-item">
     <select class="filter-item__select" v-model="filter.column">
-      <option :value="'any'">Any column</option>
-      <option disabled>-----</option>
+      <option :value="'any'">
+        Any column
+      </option>
+      <option disabled>
+        -----
+      </option>
       <option v-for="column in columns" :key="column.name" :value="column">
         {{ column.name }}
       </option>
-      <option disabled>-----</option>
-      <option :value="'custom'">Custom SQL</option>
+      <option disabled>
+        -----
+      </option>
+      <option :value="'custom'">
+        Custom SQL
+      </option>
     </select>
     <select v-if="operators !== null" class="filter-item__select" v-model="filter.operator">
       <option
@@ -46,7 +54,7 @@
 </style>
 
 <script>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 
 class Operator {
   constructor({ id, name, hasParameter = true, isSelectable = true }) {
@@ -106,8 +114,8 @@ const StringOperators = [
 
 export default {
   props: {
-    filter: Object,
-    columns: Array
+    filter: { type: Object, default: () => ({}) },
+    columns: { type: Array, default: () => [] },
   },
   setup(props) {
     if (props.filter.column === null) {

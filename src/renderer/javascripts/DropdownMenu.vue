@@ -1,12 +1,14 @@
 <template>
   <div class="dropdown">
     <button class="dropdown__trigger" @click="toggleOpen">
-      {{label}} ▼
+      {{ label }} ▼
     </button>
     <dialog :open="open" class="dropdown__dialog">
       <ul class="menu">
         <li v-for="(option, index) in options" :key="index" class="menu__item">
-          <button v-if="option" @click="select(option)">{{option}}</button>
+          <button v-if="option" @click="select(option)">
+            {{ option }}
+          </button>
           <hr v-else />
         </li>
       </ul>
@@ -70,8 +72,8 @@
 import { ref } from 'vue';
 export default {
   props: {
-    label: String,
-    options: Array,
+    label: { type: String, required: true },
+    options: { type: Array, required: true },
   },
   emits: ['select'],
   setup(props, { emit }) {

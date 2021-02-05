@@ -12,7 +12,7 @@
       </div>
       <div class="text">
         <template v-for="segment in segments(item.text)" :key="segment">
-          {{ segment }}<wbr/>
+          {{ segment }}<wbr />
         </template>
       </div>
     </div>
@@ -60,7 +60,7 @@ import { ref } from 'vue';
 
 export default {
   props: {
-    items: Array,
+    items: { type: Array, default: () => [] },
   },
   emits: ['open'],
   setup() {

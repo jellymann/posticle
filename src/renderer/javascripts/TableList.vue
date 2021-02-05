@@ -1,15 +1,17 @@
 <template>
   <div class="scroll">
-    <div v-if="loading">Loading...</div>
+    <div v-if="loading">
+      Loading...
+    </div>
     <template v-if="!loading">
       <IconGrid
         v-if="publicTables.length > 0"
         class="grid"
         :items="publicTables.map(tableItem)"
-        @open="$emit('openTable', $event.table)"
+        @open="$emit('open-table', $event.table)"
       >
         <template #icon="{ item }">
-          <table-big-icon :class="`icon ${tableIconClass(item.table)}`"/>
+          <table-big-icon :class="`icon ${tableIconClass(item.table)}`" />
         </template>
       </IconGrid>
       <div v-for="schema in otherSchemas" :key="schema.name" :class="{ 'schema': true, 'open ': schema.isOpen }">
@@ -21,10 +23,10 @@
         <IconGrid
           v-if="schema.isOpen"
           :items="schema.tables.map(tableItem)"
-          @open="$emit('openTable', $event.table)"
+          @open="$emit('open-table', $event.table)"
         >
           <template #icon="{ item }">
-            <table-big-icon :class="`icon ${tableIconClass(item.table)}`"/>
+            <table-big-icon :class="`icon ${tableIconClass(item.table)}`" />
           </template>
         </IconGrid>
       </div>
@@ -100,8 +102,8 @@ export default {
     SchemaIcon,
     Triangle,
   },
-  emits: ['openTable'],
-  setup(_props, { emit }) {
+  emits: ['open-table'],
+  setup() {
     const connectionId = inject('connectionId');
     const eventTarget = inject('eventTarget');
 
@@ -121,7 +123,7 @@ export default {
         otherSchemas.value = [];
       } finally {
         loading.value = false;
-      };
+      }
     }
     loadTables();
 

@@ -11,7 +11,7 @@
 </template>
 
 <script>
-import { computed, inject, ref, watch, watchEffect } from 'vue';
+import { ref } from 'vue';
 import TableContent from './TableContent.vue';
 import TableStructure from './TableStructure.vue';
 import ToggleButtons from './ToggleButtons.vue';
@@ -19,9 +19,9 @@ import ToggleButtons from './ToggleButtons.vue';
 export default {
   components: { TableContent, TableStructure, ToggleButtons },
   props: {
-    table: Object
+    table: { type: Object, required: true },
   },
-  setup(props) {
+  setup() {
     const currentTab = ref("table-content");
 
     return {

@@ -15,8 +15,6 @@ const ROUTES = {
   'database/:id': 'Database'
 };
 
-const DEFAULT_ROUTE = 'Connections';
-
 const stripHash = s => s.indexOf('#') === 0 ? s.substring(1) : s;
 
 export default {
