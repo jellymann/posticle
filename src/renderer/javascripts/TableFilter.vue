@@ -13,13 +13,23 @@
     </ul>
     <div class="filter__actions">
       <div class="filter__actions-left">
-        <button class="filter__button">Save Filter...</button>
-        <button class="filter__button">Load Filter...</button>
+        <button class="filter__button">
+          Save Filter...
+        </button>
+        <button class="filter__button">
+          Load Filter...
+        </button>
       </div>
       <div class="filter__actions-right">
-        <button class="filter__button" @click="clearFilter">Clear Filter</button>
-        <button class="filter__button">SQL Preview</button>
-        <button class="filter__button" @click="applyFilter">Apply Filter</button>
+        <button class="filter__button" @click="clearFilter">
+          Clear Filter
+        </button>
+        <button class="filter__button">
+          SQL Preview
+        </button>
+        <button class="filter__button" @click="applyFilter">
+          Apply Filter
+        </button>
       </div>
     </div>
   </div>
@@ -71,6 +81,10 @@ import FilterItem from './FilterItem.vue';
 import PlusIcon from '../images/plus.svg';
 import MinusIcon from '../images/minus.svg';
 
+const createFilter = () => {
+  return { column: null, operator: null, text: '' };
+};
+
 export default {
   components: {
     FilterItem,
@@ -78,13 +92,11 @@ export default {
     MinusIcon
   },
   props: {
-    columns: Array,
-    modelValue: Array
+    columns: { type: Array, default: () => [] },
+    modelValue: { type: Array, default: null },
   },
+  emits: ['update:modelValue', 'apply-filter'],
   setup(props, { emit }) {
-    const createFilter = () => {
-      return { column: null, operator: null, text: '' };
-    };
 
     const filters = ref(props.modelValue || [createFilter()]);
 
@@ -124,7 +136,7 @@ export default {
     })
 
     const applyFilter = () => {
-      emit('applyFilter', emitFilters.value);
+      emit('apply-filter', emitFilters.value);
     }
 
     watchEffect(() => {

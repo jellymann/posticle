@@ -38,9 +38,10 @@ import { ref } from 'vue';
 
 export default {
   props: {
-    items: Array,
-    modelValue: String
+    items: { type: Array, required: true },
+    modelValue: { type: String, default: null },
   },
+  emits: ['update:modelValue'],
   setup(props, { emit }) {
     const value = ref(props.modelValue || null);
 

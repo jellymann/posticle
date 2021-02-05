@@ -17,7 +17,7 @@ export default function deepClone(value) {
   }
   let newObject = {};
   Object.keys(value).forEach(key => {
-    if (value.hasOwnProperty(key)) {
+    if ({}.hasOwnProperty.call(value, key)) {
       newObject[key] = deepClone(value[key]);
     }
   });

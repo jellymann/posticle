@@ -1,10 +1,10 @@
 <template>
   <div class="nav">
     <div class="nav__back-forward">
-      <button class='nav__button'>
+      <button class="nav__button">
         <back-icon />
       </button>
-      <button class='nav__button'>
+      <button class="nav__button">
         <forward-icon />
       </button>
     </div>
@@ -204,27 +204,23 @@ export default {
     SidebarRightIcon
   },
   props: {
-    table: Object,
+    table: { type: Object, required: true },
     showDatabases: Boolean,
     leftBarOpen: Boolean,
     rightBarOpen: Boolean
   },
+  emits: ['update:leftBarOpen', 'update:rightBarOpen', 'breadcrumb', 'refresh'],
   setup(props, { emit }) {
     const connectionId = inject('connectionId');
 
     const connection = ref(null);
 
-    const leftBarOpen = ref(props.leftBarOpen);
-    const rightBarOpen = ref(props.rightBarOpen);
-
     const toggleLeftBar = () => {
-      leftBarOpen.value = !leftBarOpen.value;
-      emit('update:leftBarOpen', leftBarOpen.value);
+      emit('update:leftBarOpen', !props.leftBarOpen.value);
     }
 
     const toggleRightBar = () => {
-      rightBarOpen.value = !rightBarOpen.value;
-      emit('update:rightBarOpen', rightBarOpen.value);
+      emit('update:rightBarOpen', !props.rightBarOpen.value);
     }
 
     const breadcrumbHost = () => {
@@ -254,8 +250,6 @@ export default {
     return {
       ...props,
       connection,
-      leftBarOpen,
-      rightBarOpen,
       toggleLeftBar,
       toggleRightBar,
       breadcrumbHost,

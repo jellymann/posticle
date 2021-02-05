@@ -1,6 +1,8 @@
 <template>
   <div class="structure">
-    <div v-if="loading">Loading...</div>
+    <div v-if="loading">
+      Loading...
+    </div>
     <div v-if="!loading && structure">
       <label>Table name</label>
       <input readonly :value="table.name" />
@@ -16,9 +18,15 @@
         </thead>
         <tbody>
           <tr v-for="column in structure.columns" :key="column.name">
-            <td>{{column.name}}</td>
-            <td>{{column.type}}</td>
-            <td>{{column.defaultValue}}</td>
+            <td>
+              {{ column.name }}
+            </td>
+            <td>
+              {{ column.type }}
+            </td>
+            <td>
+              {{ column.defaultValue }}
+            </td>
             <td>
               <span v-for="constraint in column.constraints" :key="constraint">
                 {{ constraint }}
@@ -50,12 +58,12 @@
 </style>
 
 <script>
-import { computed, inject, ref, watch, watchEffect, onMounted, onBeforeUnmount } from 'vue';
+import { inject, ref, watchEffect, onMounted, onBeforeUnmount } from 'vue';
 import callMain from './callMain';
 
 export default {
   props: {
-    table: Object
+    table: { type: Object, required: true },
   },
   setup(props) {
     const connectionId = inject('connectionId');
@@ -93,7 +101,6 @@ export default {
     });
 
     return {
-      table: props.table,
       structure,
       loading
     }

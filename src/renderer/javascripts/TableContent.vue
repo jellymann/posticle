@@ -6,7 +6,9 @@
     v-model="filters"
   />
   <div class="content" ref="contentEl">
-    <div v-if="loading">Loading...</div>
+    <div v-if="loading">
+      Loading...
+    </div>
     <div v-if="!loading && data" class="content__table" ref="tableEl">
       <div class="content__thead" :style="{ height: `${HEADER_HEIGHT_REMS}rem` }">
         <div
@@ -15,7 +17,7 @@
           class="content__th"
           :style="{ width: `${columnWidths[index]}rem` }"
         >
-          {{field}}
+          {{ field }}
         </div>
         <div
           v-for="(field, index) in data.fields"
@@ -34,11 +36,12 @@
             :style="rowStyle(index)"
             :key="index"
             :row="rows[index]"
-            :columnWidths="columnWidths"
-            :isSelected="rowIsSelected(index)"
+            :column-widths="columnWidths"
+            :is-selected="rowIsSelected(index)"
             @mousedown.prevent="mouseDownOnRow(index)"
             @mousemove.prevent="mouseMoveOnRow(index)"
-            @finishEdit="finishEditRow(rows[index], index)" />
+            @finishEdit="finishEditRow(rows[index], index)"
+          />
         </transition-group>
       </div>
     </div>
@@ -46,10 +49,14 @@
 
   <div v-if="hasChanges" class="changes-bar">
     <div class="changes-bar__left">
-      <button class="changes-bar__button" @click="discardChanges">Discard Changes</button>
+      <button class="changes-bar__button" @click="discardChanges">
+        Discard Changes
+      </button>
     </div>
     <div class="changes-bar__right">
-      <button class="changes-bar__button" @click="performChanges">Save Changes</button>
+      <button class="changes-bar__button" @click="performChanges">
+        Save Changes
+      </button>
     </div>
   </div>
 
@@ -61,11 +68,14 @@
         Row
       </button>
     </div>
-    <div v-if="data" class="status-bar__center">{{ startRow }} - {{ endRow }} of {{ data.count }}</div>
+    <div v-if="data" class="status-bar__center">
+      {{ startRow }} - {{ endRow }} of {{ data.count }}
+    </div>
     <div v-if="data" class="status-bar__right">
       <button
         :class="{ 'status-bar__button': true, 'filter-button': true, 'filter-button--active': filterOpen }"
-        @click="filterOpen = !filterOpen">
+        @click="filterOpen = !filterOpen"
+      >
         Filter
       </button>
       <div class="pagination">
@@ -209,7 +219,7 @@
 </style>
 
 <script>
-import { computed, inject, onMounted, ref, reactive, watch, watchEffect, onBeforeUnmount, nextTick } from 'vue';
+import { computed, inject, onMounted, ref, reactive, watch, onBeforeUnmount, nextTick } from 'vue';
 import callMain from './callMain';
 import TableFilter from "./TableFilter.vue";
 import TableRow from "./TableRow.vue";
@@ -238,7 +248,7 @@ export default {
     ForwardIcon
   },
   props: {
-    table: Object
+    table: { type: Object, required: true },
   },
   setup(props) {
     const connectionId = inject('connectionId');
@@ -422,7 +432,7 @@ export default {
       let deletes = [];
       let inserts = [];
 
-      Object.entries(rowsWithChanges).forEach(([index, { type, change }]) => {
+      Object.entries(rowsWithChanges).forEach(([, { type, change }]) => {
         let array;
         switch (type) {
         case 'update':
@@ -495,7 +505,7 @@ export default {
     const discardChanges = () => {
       selectedIndexStart.value = -1;
       selectedIndexEnd.value = -1;
-      Object.entries(rowsWithChanges).forEach(([index, { type, change }]) => {
+      Object.entries(rowsWithChanges).forEach(([index, { type }]) => {
         let row = rows.value[index];
         switch (type) {
         case 'update':
@@ -580,7 +590,7 @@ export default {
       return {
         left: `${columnWidths.slice(0, index + 1).reduce((a, b) => a + b, 0) - (index === data.value.fields.length - 1 ? RESIZER_WIDTH : RESIZER_WIDTH/2)}rem`,
         width: `${RESIZER_WIDTH}rem`,
-      };;
+      };
     }
 
     let resizingColumnIndex = ref(null);
