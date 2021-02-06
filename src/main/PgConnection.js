@@ -74,6 +74,7 @@ export default class PgConnection {
     `);
 
     return result.rows.map(row => ({
+      id: uuid(),
       name: row.table_name,
       type: row.table_type,
       schema: 'public'
@@ -98,6 +99,7 @@ export default class PgConnection {
       }
 
       schema.tables.push({
+        id: uuid(),
         name: row.table_name,
         type: row.table_type,
         schema: row.table_schema
