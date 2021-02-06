@@ -16,21 +16,21 @@
           <label for="table_tablespace">Tablespace</label>
         </div>
         <div class="td table-name-cell">
-          <input id="table_name" readonly v-model="table.name" />
+          <input id="table_name" v-model="changes.table.name" />
         </div>
         <div class="td table-temp-cell">
-          <input id="table_temporary" type="checkbox" v-model="table.temporary" />
-          <label for="table_temporary">Temporary</label>
+          <input id="table_temporary" type="checkbox" :checked="changes.table.temporary" disabled />
+          <label for="table_temporary" disabled>Temporary</label>
         </div>
         <div class="td">
-          <select id="table_schema" v-model="table.schema">
+          <select id="table_schema" v-model="changes.table.schema">
             <option :value="table.schema">
               {{ table.schema }}
             </option>
           </select>
         </div>
         <div class="td">
-          <select id="table_tablespace" v-model="table.tablespace">
+          <select id="table_tablespace" v-model="changes.table.tablespace">
           </select>
         </div>
       </div>
@@ -46,7 +46,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="column in structure.columns" :key="column.name">
+          <tr v-for="(column, i) in changes.structure.columns" :key="i">
             <td class="table-cell">
               <input type="text" class="table-input" v-model="column.name" />
             </td>
@@ -102,7 +102,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="index in structure.indexes" :key="index.name">
+          <tr v-for="(index, i) in changes.structure.indexes" :key="i">
             <td class="table-cell">
               <input type="text" class="table-input" v-model="index.name" />
             </td>
@@ -329,13 +329,14 @@ td {
 </style>
 
 <script>
-import { inject, ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { inject, ref, watch, onMounted, onBeforeUnmount, reactive } from 'vue';
 import callMain from './callMain';
 
 import ToggleButtons from './ToggleButtons.vue';
 
 import PlusIcon from '../images/plus.svg';
 import MinusIcon from '../images/minus.svg';
+import deepClone from './deepClone';
 
 export default {
   components: {
@@ -356,6 +357,8 @@ export default {
     const structure = ref(null);
     const loading = ref(false);
 
+    const changes = reactive({});
+
     const loadStructure = async (table) => {
       loading.value = true;
 
@@ -364,6 +367,8 @@ export default {
           connectionId: props.connectionId,
           table,
         });
+        changes.structure = deepClone(structure.value);
+        changes.table = deepClone(props.table);
       } catch (error) {
         console.error(error);
         structure.value = null;
@@ -395,6 +400,7 @@ export default {
     };
 
     return {
+      changes,
       structure,
       loading,
       newColumn,
