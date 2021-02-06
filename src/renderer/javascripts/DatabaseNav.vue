@@ -204,7 +204,7 @@ export default {
     SidebarRightIcon
   },
   props: {
-    table: { type: Object, required: true },
+    table: { type: Object, default: null },
     showDatabases: Boolean,
     leftBarOpen: Boolean,
     rightBarOpen: Boolean

@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <database-nav
-      :showDatabases="showDatabases"
+      :show-databases="showDatabases"
       :table="currentTable"
       v-model:leftBarOpen="leftBarOpen"
       v-model:rightBarOpen="rightBarOpen"
@@ -14,8 +14,8 @@
       </div>
       <div class="main__content">
         <!-- TODO: probably use an actual router for this :/ -->
-        <database-list v-if="showDatabases && !currentTable" @openDatabase="openDatabase"/>
-        <table-list v-if="!showDatabases && !currentTable" @openTable="currentTable = $event"/>
+        <database-list v-if="showDatabases && !currentTable" @open-database="openDatabase" />
+        <table-list v-if="!showDatabases && !currentTable" @open-table="currentTable = $event" />
         <table-view :table="currentTable" v-if="!showDatabases && currentTable" />
       </div>
       <div class="main__right" v-show="rightBarOpen"></div>

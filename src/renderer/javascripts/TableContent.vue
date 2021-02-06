@@ -2,7 +2,7 @@
   <table-filter
     v-if="filterOpen && data"
     :columns="data.structure.columns"
-    @applyFilter="applyFilter"
+    @apply-filter="applyFilter"
     v-model="filters"
   />
   <div class="content" ref="contentEl">
@@ -40,7 +40,7 @@
             :is-selected="rowIsSelected(index)"
             @mousedown.prevent="mouseDownOnRow(index)"
             @mousemove.prevent="mouseMoveOnRow(index)"
-            @finishEdit="finishEditRow(rows[index], index)"
+            @finish-edit="finishEditRow(rows[index], index)"
           />
         </transition-group>
       </div>
