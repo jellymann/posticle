@@ -47,18 +47,11 @@
     </div>
   </div>
 
-  <div v-if="hasChanges" class="changes-bar">
-    <div class="changes-bar__left">
-      <button class="changes-bar__button" @click="discardChanges">
-        Discard Changes
-      </button>
-    </div>
-    <div class="changes-bar__right">
-      <button class="changes-bar__button" @click="performChanges">
-        Save Changes
-      </button>
-    </div>
-  </div>
+  <changes-bar
+    v-if="hasChanges"
+    @discard="discardChanges"
+    @save="performChanges"
+  />
 
   <div class="status-bar">
     <div class="status-bar__left">
@@ -179,15 +172,6 @@
   opacity: 0;
 }
 
-.changes-bar {
-  @include status-bar;
-  background-color: $edited-background;
-
-  &__right {
-    margin-left: auto;
-  }
-}
-
 .status-bar {
   @include status-bar;
 
@@ -249,6 +233,7 @@ import ToggleButtons from './ToggleButtons.vue';
 import TableFilter from "./TableFilter.vue";
 import TableRow from "./TableRow.vue";
 
+import ChangesBar from './ChangesBar.vue';
 import PlusIcon from '../images/plus.svg';
 import BackIcon from '../images/back.svg';
 import ForwardIcon from '../images/forward.svg';
@@ -268,7 +253,8 @@ export default {
     TableRow,
     PlusIcon,
     BackIcon,
-    ForwardIcon
+    ChangesBar,
+    ForwardIcon,
   },
   props: {
     connectionId: { type: String, required: true },
