@@ -47,14 +47,14 @@
             label: 'Content',
             to: {
               name: 'TableContent',
-              params: { connectionId, database, table, schema, table }
+              params: { connectionId, database, table, schema, tableType, table }
             }
           },
           {
             label: 'Structure',
             to: {
               name: 'TableStructure',
-              params: { connectionId, database, table, schema, table }
+              params: { connectionId, database, table, schema, tableType, table }
             }
           },
         ]"
@@ -89,6 +89,7 @@ export default {
     connectionId: { type: String, required: true },
     database: { type: String, required: true },
     schema: { type: String, required: true },
+    tableType: { type: String, required: true },
     table: { type: String, required: true },
   },
   setup(props) {

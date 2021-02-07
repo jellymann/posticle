@@ -1,6 +1,6 @@
 <template>
   <li :class="`tables__${type}`">
-    <router-link :to="{ name: tableRouteName, params: { connectionId, database, schema: item.schema, table: item.name } }" :class="itemClass" v-if="type === 'table'">
+    <router-link :to="tableRoute" :class="itemClass" v-if="type === 'table'">
       <table-icon class="item__icon" />
       <span class="item__name">{{ item.name }}</span>
     </router-link>
@@ -95,26 +95,32 @@ export default {
     const connectionId = computed(() => route.params.connectionId);
     const database = computed(() => route.params.database);
     const isOpen = ref(props.type === 'schema' && route.params.schema === props.item.name);
-    
-    const itemClass = computed(() => {
-      let itemType;
-      if (props.type === 'schema') itemType = 'schema';
-      else itemType = props.item.type === 'VIEW' ? 'view' : 'table';
 
-      return `item item--${itemType}`;
+    const itemType = computed(() => {
+      if (props.type === 'schema') return 'schema';
+      return props.item.type === 'VIEW' ? 'view' : 'table';
     });
 
-    const tableRouteName = computed(() => {
-      if (route.name === 'TableStructure') return 'TableStructure';
-      return 'TableContent';
-    });
+    const itemClass = computed(() => `item item--${itemType.value}`);
+
+    const tableRoute = computed(() => ({
+      name: route.name === 'TableStructure' ? 'TableStructure' : 'TableContent',
+      params: {
+        connectionId: connectionId.value,
+        database: database.value,
+        schema: props.item.schema,
+        tableType: itemType.value,
+        table: props.item.name,
+      },
+    }));
 
     return {
       connectionId,
       database,
+      itemType,
       itemClass,
       isOpen,
-      tableRouteName,
+      tableRoute,
     };
   },
 };

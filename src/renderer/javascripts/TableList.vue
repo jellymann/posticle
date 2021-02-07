@@ -162,6 +162,7 @@ export default {
           connectionId: props.connectionId,
           database: props.database,
           schema: table.schema,
+          tableType: table.type === 'VIEW' ? 'view' : 'table',
           table: table.name,
         },
       });
