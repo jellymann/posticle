@@ -82,6 +82,17 @@ async function saveFavourites(favourites) {
   return await fs.promises.writeFile(favouritesPath, JSON.stringify(favourites));
 }
 
+function withConnection({ connectionId }, cb) {
+  let connection = PgConnection.find(connectionId);
+  if (!connection) return;
+
+  return cb(connection);
+}
+
+function respondToRendererWithConnection(eventName, cb) {
+  return respondToRenderer(eventName, data => withConnection(data, connection => cb(data, connection)));
+}
+
 respondToRenderer('init', async () => {
   return {
     favourites: await getFavourites(),
@@ -93,10 +104,8 @@ respondToRenderer('saveFavourites', async (data) => {
   await fs.promises.writeFile(favouritesPath, JSON.stringify(data));
 });
 
-respondToRenderer('getFavourite', async (data) => {
-  let connection = PgConnection.find(data.connectionId);
+respondToRendererWithConnection('getFavourite', async (_, connection) => {
   let favourites = await getFavourites();
-
   return favourites.find(x => x.id === connection.favouriteId);
 });
 
@@ -122,53 +131,32 @@ respondToRenderer('connect', async (data) => {
   return { id: connection.id, error: false };
 });
 
-respondToRenderer('fetchDatabases', async (data) => {
-  let connection = PgConnection.find(data.connectionId);
-  if (!connection) return;
-
+respondToRendererWithConnection('fetchDatabases', async (_, connection) => {
   return await connection.fetchDatabases();
 });
 
-respondToRenderer('useDatabase', async (data) => {
-  let connection = PgConnection.find(data.connectionId);
-  if (!connection) return;
-
+respondToRendererWithConnection('useDatabase', async (data, connection) => {
   await connection.useDatabase(data.database);
   return {};
 });
 
-respondToRenderer('fetchTables', async (data) => {
-  let connection = PgConnection.find(data.connectionId);
-  if (!connection) return;
-
+respondToRendererWithConnection('fetchTables', async (data, connection) => {
   return await connection.fetchTables(data.database);
 });
 
-respondToRenderer('fetchData', async (data) => {
-  let connection = PgConnection.find(data.connectionId);
-  if (!connection) return;
-
+respondToRendererWithConnection('fetchData', async (data, connection) => {
   return await connection.fetchData(data.table, data.options || {});
 });
 
-respondToRenderer('fetchStructure', async (data) => {
-  let connection = PgConnection.find(data.connectionId);
-  if (!connection) return;
-
+respondToRendererWithConnection('fetchStructure', async (data, connection) => {
   return await connection.fetchStructure(data.table);
 });
 
-respondToRenderer('performChanges', async (data) => {
-  let connection = PgConnection.find(data.connectionId);
-  if (!connection) return;
-
+respondToRendererWithConnection('performChanges', async (data, connection) => {
   return await connection.performChanges(data);
-})
+});
 
-respondToRenderer('getConnectionInfo', async (data) => {
-  let connection = PgConnection.find(data.connectionId);
-  if (!connection) return;
-
+respondToRendererWithConnection('getConnectionInfo', (_, connection) => {
   return {
     host: connection.host,
     database: connection.database,
