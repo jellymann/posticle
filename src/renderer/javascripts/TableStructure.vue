@@ -46,7 +46,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(column, i) in changes.structure.columns" :key="i">
+          <tr v-for="(column, i) in changes.structure.columns" :key="i" :class="{ 'removed': column.toBeRemoved }">
             <td class="table-cell">
               <input type="text" class="table-input" v-model="column.name" />
             </td>
@@ -83,7 +83,7 @@
               </div>
             </td>
             <td>
-              <button class="remove-button">
+              <button class="remove-button" @click="removeColumn(column)">
                 <minus-icon />
               </button>
             </td>
@@ -240,7 +240,7 @@ td {
 }
 
 .table-cell {
-  position: relative;
+    position: relative;
   font-size: 0.75rem;
   border-top: 1px solid map-get($gray, lighter);
   border-bottom: 1px solid map-get($gray, light);
@@ -251,6 +251,26 @@ td {
 
   &:nth-last-child(2) {
     border-right: 1px solid map-get($gray, lighter);
+  }
+
+  .removed & {
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      height: 2px;
+      left: 0;
+      right: 0;
+      background: red;
+    }
+
+    &:first-child::after {
+      left: -0.5rem;
+    }
+
+    &:nth-last-child(2)::after {
+      right: -0.5rem;
+    }
   }
 
   & + &::before {
@@ -391,8 +411,23 @@ export default {
 
     watch([() => props.schema, () => props.table], loadStructureForCurrentTable);
 
-    const newColumn = () => {
+    const removeColumn = (column) => {
+      if (column.isNew) {
+        let columns = changes.structure.columns;
+        columns.splice(columns.indexOf(column), 1);
+      } else {
+        column.toBeRemoved = !column.toBeRemoved;
+      }
+    };
 
+    const newColumn = () => {
+      changes.structure.columns.push({
+        name: '',
+        type: null,
+        defaultValue: null,
+        constraints: [],
+        isNew: true,
+      });
     };
 
     const newIndex = () => {
@@ -403,6 +438,7 @@ export default {
       changes,
       structure,
       loading,
+      removeColumn,
       newColumn,
       newIndex,
     };
