@@ -24,8 +24,8 @@
         </div>
         <div class="td">
           <select id="table_schema" v-model="changes.table.schema">
-            <option :value="table.schema">
-              {{ table.schema }}
+            <option :value="schema">
+              {{ schema }}
             </option>
           </select>
         </div>
@@ -357,6 +357,7 @@ td {
 
 <script>
 import { inject, ref, watch, onMounted, onBeforeUnmount, reactive, computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 import callMain from './callMain';
 import deepClone from './deepClone';
@@ -383,6 +384,7 @@ export default {
     table: { type: String, required: true },
   },
   setup(props) {
+    const router = useRouter();
     const eventTarget = inject('eventTarget');
     
     const structure = ref(null);
@@ -447,8 +449,8 @@ export default {
     const hasChanges = computed(() => {
       if (!changes.table || !changes.structure) return false;
 
-      return props.table.name !== changes.table.name ||
-        props.table.schema !== changes.table.schema ||
+      return props.table !== changes.table.name ||
+        props.schema !== changes.table.schema ||
         props.table.tablespace !== changes.table.tablespace ||
         structure.value.columns.some((column, index) => {
           let changedColumn = changes.structure.columns[index];
@@ -461,19 +463,19 @@ export default {
 
     const discardChanges = () => {
       changes.structure = deepClone(structure.value);
-      changes.table = deepClone(props.table);
+      changes.table = { schema: props.schema, name: props.table };
     };
 
     const performChanges = async () => {
-      let m = { connectionId };
+      let m = { connectionId: props.connectionId };
 
-      m.table = props.table;
+      m.table = { schema: props.schema, name: props.table };
       m.tableChanges = {};
 
-      if (props.table.name !== changes.table.name) {
+      if (props.table !== changes.table.name) {
         m.tableChanges.name = changes.table.name;
       }
-      if (props.table.schema !== changes.table.schema) {
+      if (props.schema !== changes.table.schema) {
         m.tableChanges.schema = changes.table.schema;
       }
       if (props.table.tablespace !== changes.table.tablespace) {
@@ -503,7 +505,15 @@ export default {
         alert(e.message);
         return;
       }
-      loadStructure(changes.table);
+      router.push({
+        name: 'TableStructure',
+        params: {
+          connectionId: props.connectionId,
+          database: props.database,
+          schema: changes.table.schema,
+          table: changes.table.name,
+        },
+      });
     };
 
     return {
