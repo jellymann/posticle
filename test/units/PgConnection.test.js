@@ -136,4 +136,34 @@ describe('PgConnection', () => {
         ` OR ctid IN (SELECT ctid FROM "public"."foo" WHERE "bar"='C' AND "baz" IS NULL LIMIT 1 FOR UPDATE);`);
     });
   });
+
+  describe('generateTableChangeQuery', () => {
+    it('generates alter queries', () => {
+      let changes = {
+        table: {
+          schema: 'public',
+          name: 'foo',
+        },
+        tableChanges: {
+          schema: 'private',
+          name: 'bar',
+        },
+        columnChanges: [
+          { type: 'rename', column: 'baz', newName: 'qux' },
+          { type: 'changeType', column: 'qux', newType: 'integer' },
+          { type: 'changeDefault', column: 'qux', newDefault: '7' },
+        ],
+      };
+
+      let sql = new PgConnection().generateTableChangeQuery(changes, ID_STRUCTURE);
+
+      expect(sql).toEqual(
+        `ALTER TABLE "public"."foo" RENAME TO "bar";\n` +
+        `ALTER TABLE "public"."bar" SET SCHEMA "private";\n` +
+        `ALTER TABLE "private"."bar" RENAME COLUMN "baz" TO "qux";\n` +
+        `ALTER TABLE "private"."bar" ALTER COLUMN "qux" TYPE integer;\n` +
+        `ALTER TABLE "private"."bar" ALTER COLUMN "qux" SET DEFAULT '7';`
+      );
+    });
+  })
 });

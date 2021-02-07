@@ -1,0 +1,14 @@
+{
+  "extends": [
+    "eslint:recommended"
+  ],
+  "rules": {},
+  "globals": {
+    "CONFIG": "readonly"
+  },
+  "env": {
+    "es6": true,
+    "node": true,
+    "jest": true
+  }
+}

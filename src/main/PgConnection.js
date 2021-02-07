@@ -285,6 +285,51 @@ export default class PgConnection {
     }
   }
 
+  async performTableChanges(changes) {
+    let sql = await this.generateTableChangeQueryForChanges(changes);
+
+    await this.query(sql);
+    return true;
+  }
+
+  async generateTableChangeQueryForChanges(changes) {
+    let structure = await this.fetchStructure(changes.table);
+
+    return this.generateTableChangeQuery(changes, structure);
+  }
+
+  generateTableChangeQuery(changes, structure) {
+    let queries = [];
+
+    if (changes.tableChanges.name) {
+      queries.push(`ALTER TABLE ${this.fullTable(structure.table)} RENAME TO "${changes.tableChanges.name}";`);
+      structure.table.name = changes.tableChanges.name;
+    }
+    if (changes.tableChanges.schema) {
+      queries.push(`ALTER TABLE ${this.fullTable(structure.table)} SET SCHEMA "${changes.tableChanges.schema}";`);
+      structure.table.schema = changes.tableChanges.schema;
+    }
+    // TODO: change tablespace?
+
+    changes.columnChanges.forEach(change => {
+      switch (change.type) {
+        case 'rename':
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} RENAME COLUMN "${change.column}" TO "${change.newName}";`);
+          break;
+        case 'changeType':
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ALTER COLUMN "${change.column}" TYPE ${change.newType};`);
+          break;
+        case 'changeDefault':
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ALTER COLUMN "${change.column}" SET DEFAULT '${change.newDefault}';`);
+          break;
+      }
+    });
+
+    // TODO: indexes
+
+    return queries.join("\n");
+  }
+
   fullTable({ name, schema }) {
     return `"${schema}"."${name}"`;
   }

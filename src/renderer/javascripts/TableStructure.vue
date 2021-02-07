@@ -464,8 +464,46 @@ export default {
       changes.table = deepClone(props.table);
     };
 
-    const performChanges = () => {
-      // TODO
+    const performChanges = async () => {
+      let m = { connectionId };
+
+      m.table = props.table;
+      m.tableChanges = {};
+
+      if (props.table.name !== changes.table.name) {
+        m.tableChanges.name = changes.table.name;
+      }
+      if (props.table.schema !== changes.table.schema) {
+        m.tableChanges.schema = changes.table.schema;
+      }
+      if (props.table.tablespace !== changes.table.tablespace) {
+        m.tableChanges.tablespace = changes.table.tablespace;
+      }
+
+      m.columnChanges = [];
+      structure.value.columns.forEach((column, index) => {
+        let changedColumn = changes.structure.columns[index];
+        if (column.name !== changedColumn.name) {
+          m.columnChanges.push({ type: 'rename', column: column.name, newName: changedColumn.name });
+        }
+        if (column.type !== changedColumn.type) {
+          m.columnChanges.push({ type: 'changeType', column: changedColumn.name, newType: changedColumn.type });
+        }
+        if (column.defaultValue !== changedColumn.defaultValue) {
+          m.columnChanges.push({ type: 'chbangeDefault', column: changedColumn.name, newDefault: changedColumn.defaultValue });
+        }
+        // TODO: constraints
+      });
+
+      // TODO: indexes
+
+      try {
+        await callMain('performTableChanges', m);
+      } catch (e) {
+        alert(e.message);
+        return;
+      }
+      loadStructure(changes.table);
     };
 
     return {

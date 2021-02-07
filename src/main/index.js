@@ -156,6 +156,10 @@ respondToRendererWithConnection('performChanges', async (data, connection) => {
   return await connection.performChanges(data);
 });
 
+respondToRendererWithConnection('performTableChanges', async (data, connection) => {
+  return await connection.performTableChanges(data);
+});
+
 respondToRendererWithConnection('getConnectionInfo', (_, connection) => {
   return {
     host: connection.host,
