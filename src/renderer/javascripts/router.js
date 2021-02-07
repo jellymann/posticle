@@ -35,7 +35,7 @@ const routes = [
         props: true,
       },
       {
-        path: 'database/:database/schema/:schema/:tableType/:table',
+        path: 'database/:database/schema/:schema/:tableType(table|view)/:table',
         component: TableView,
         name: 'Table',
         props: true,
