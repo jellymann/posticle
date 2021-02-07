@@ -123,6 +123,12 @@
     </div>
   </div>
 
+  <changes-bar
+    v-if="hasChanges"
+    @discard="discardChanges"
+    @save="performChanges"
+  />
+
   <div class="status-bar">
     <div class="status-bar__left">
       <toggle-buttons
@@ -199,6 +205,7 @@
 
   input {
     width: 100%;
+    height: 100%;
     border: none;
     background: none;
     padding: 0.25rem 0.5rem;
@@ -349,18 +356,22 @@ td {
 </style>
 
 <script>
-import { inject, ref, watch, onMounted, onBeforeUnmount, reactive } from 'vue';
+import { inject, ref, watch, onMounted, onBeforeUnmount, reactive, computed } from 'vue';
+
 import callMain from './callMain';
+import deepClone from './deepClone';
+
+import ChangesBar from './ChangesBar.vue';
 
 import ToggleButtons from './ToggleButtons.vue';
 
 import PlusIcon from '../images/plus.svg';
 import MinusIcon from '../images/minus.svg';
-import deepClone from './deepClone';
 
 export default {
   components: {
     ToggleButtons,
+    ChangesBar,
     PlusIcon,
     MinusIcon,
   },
@@ -387,8 +398,7 @@ export default {
           connectionId: props.connectionId,
           table,
         });
-        changes.structure = deepClone(structure.value);
-        changes.table = deepClone(props.table);
+        discardChanges();
       } catch (error) {
         console.error(error);
         structure.value = null;
@@ -431,7 +441,31 @@ export default {
     };
 
     const newIndex = () => {
+      // TODO
+    };
 
+    const hasChanges = computed(() => {
+      if (!changes.table || !changes.structure) return false;
+
+      return props.table.name !== changes.table.name ||
+        props.table.schema !== changes.table.schema ||
+        props.table.tablespace !== changes.table.tablespace ||
+        structure.value.columns.some((column, index) => {
+          let changedColumn = changes.structure.columns[index];
+          return column.name !== changedColumn.name ||
+            column.type !== changedColumn.type ||
+            column.default !== changedColumn.default; // TODO: compare constraints
+        });
+        // TODO: indices
+    });
+
+    const discardChanges = () => {
+      changes.structure = deepClone(structure.value);
+      changes.table = deepClone(props.table);
+    };
+
+    const performChanges = () => {
+      // TODO
     };
 
     return {
@@ -441,8 +475,10 @@ export default {
       removeColumn,
       newColumn,
       newIndex,
+      hasChanges,
+      discardChanges,
+      performChanges,
     };
   },
 };
 </script>
-
