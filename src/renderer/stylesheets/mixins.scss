@@ -13,7 +13,7 @@
     background: $button-background-hover;
   }
 
-  &--active, &--active:hover {
+  &--active, &--active:hover, &--link.router-link-active {
     background: map-get($gray, dark);
     border-color: map-get($gray, dark);
     color: map-get($gray, lightest);

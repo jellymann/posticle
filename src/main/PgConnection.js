@@ -47,7 +47,9 @@ export default class PgConnection {
     await this.client.connect();
   }
 
-  async fetchTables() {
+  async fetchTables(database) {
+    await this.connectToDatabase(database);
+
     let publicTables = await this.fetchPublicTables();
     let otherTables = await this.fetchOtherTables();
 
@@ -55,6 +57,12 @@ export default class PgConnection {
       publicTables: publicTables,
       otherSchemas: otherTables
     };
+  }
+
+  async connectToDatabase(database) {
+    if (database === this.database) return;
+
+    await this.useDatabase(database);
   }
 
   async fetchPublicTables() {
@@ -114,7 +122,7 @@ export default class PgConnection {
 
     let orderBy = '';
 
-    if (table.type !== 'VIEW') {
+    if (structure.table.type !== 'VIEW') {
       let orderByColumn = 'ctid';
       if (structure.primaryKey) orderByColumn = structure.primaryKey;
       orderBy = `ORDER BY "${orderByColumn}" ASC`
@@ -141,6 +149,19 @@ export default class PgConnection {
   }
 
   async fetchStructure(table) {
+    let tableResult = await this.query(`
+      SELECT table_type
+      FROM information_schema.tables
+      WHERE table_schema = '${table.schema}'
+      AND table_name = '${table.name}'
+    `);
+
+    console.log("RESUUUUUUUUUUUUUUUUUUUUUUUUUUULT")
+    console.log(table)
+    console.log(tableResult);
+
+    let type = tableResult.rows[0].table_type;
+
     let result = await this.query({
       text: `
         SELECT c.column_name, c.data_type, c.column_default, c.is_nullable
@@ -173,7 +194,7 @@ export default class PgConnection {
     }
 
     return {
-      table,
+      table: { ...table, type },
       primaryKey,
       columns: result.rows.map(row => {
         let constraints = [];

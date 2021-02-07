@@ -62,7 +62,25 @@
 
   <div class="status-bar">
     <div class="status-bar__left">
-      <slot></slot>
+      <toggle-buttons
+        :links="true"
+        :items="[
+          {
+            label: 'Content',
+            to: {
+              name: 'TableContent',
+              params: { connectionId, database, table, schema, table }
+            }
+          },
+          {
+            label: 'Structure',
+            to: {
+              name: 'TableStructure',
+              params: { connectionId, database, table, schema, table }
+            }
+          },
+        ]"
+      />
       <button v-if="data" class="status-bar__button status-bar__new-row" @click="newRow">
         <plus-icon />
         Row
@@ -220,16 +238,20 @@
 
 <script>
 import { computed, inject, onMounted, ref, reactive, watch, onBeforeUnmount, nextTick } from 'vue';
+
 import callMain from './callMain';
-import TableFilter from "./TableFilter.vue";
-import TableRow from "./TableRow.vue";
-import PlusIcon from '../images/plus.svg';
-import BackIcon from '../images/back.svg';
-import ForwardIcon from '../images/forward.svg';
 import dig from './dig';
 import deepSet from './deepSet';
 import { convertRemToPixels, convertPixelsToRem } from './rem';
 import getTextWidth from './getTextWidth';
+
+import ToggleButtons from './ToggleButtons.vue';
+import TableFilter from "./TableFilter.vue";
+import TableRow from "./TableRow.vue";
+
+import PlusIcon from '../images/plus.svg';
+import BackIcon from '../images/back.svg';
+import ForwardIcon from '../images/forward.svg';
 
 const ROWS_PER_PAGE = 1000;
 const ROW_HEIGHT_REMS = 3;
@@ -241,6 +263,7 @@ const RESIZER_WIDTH = 0.5;
 
 export default {
   components: {
+    ToggleButtons,
     TableFilter,
     TableRow,
     PlusIcon,
@@ -248,10 +271,12 @@ export default {
     ForwardIcon
   },
   props: {
-    table: { type: Object, required: true },
+    connectionId: { type: String, required: true },
+    database: { type: String, required: true },
+    schema: { type: String, required: true },
+    table: { type: String, required: true },
   },
   setup(props) {
-    const connectionId = inject('connectionId');
     const eventTarget = inject('eventTarget');
 
     const data = ref(null);
@@ -300,28 +325,28 @@ export default {
     const contentEl = ref(null);
     const tableEl = ref(null);
 
-    let connectionInfo = null;
-
     const loadDataAndStructure = async () => {
       loading.value = true;
 
       try {
-        let fav = await callMain('getFavourite', { connectionId });
-        connectionInfo = await callMain('getConnectionInfo', { connectionId });
+        let fav = await callMain('getFavourite', { connectionId: props.connectionId });
 
         data.value = await callMain('fetchData', {
-          connectionId,
-          table: props.table,
+          connectionId: props.connectionId,
+          table: {
+            schema: props.schema,
+            name: props.table,
+          },
           options: {
             limit: ROWS_PER_PAGE,
             offset: offset.value,
-            filters: JSON.parse(JSON.stringify(filters.value))
-          }
+            filters: JSON.parse(JSON.stringify(filters.value)),
+          },
         });
         columnWidths.length = 0;
         data.value.fields.forEach((field, index) => {
           let width = dig(fav,
-            'columnWidths', connectionInfo.database, props.table.schema, props.table.name, field);
+            'columnWidths', props.database, props.schema, props.table, field);
           if (!width) {
             let maxWidth = Math.max(MIN_COLUMN_WIDTH, convertPixelsToRem(getTextWidth(field)) + CELL_PADDING);
             for (let i = 0; i < Math.min(data.value.rows.length, 10); i++) {
@@ -368,7 +393,7 @@ export default {
       loadDataAndStructure();
     }
 
-    watch(() => props.table, reset);
+    watch([() => props.schema, () => props.table], reset);
 
     const applyFilter = (newFilters) => {
       currentPage.value = 1;
@@ -449,8 +474,11 @@ export default {
       });
 
       let m = {
-        connectionId,
-        table: props.table,
+        connectionId: props.connectionId,
+        table: {
+          schema: props.schema,
+          name: props.table,
+        },
         updates,
         deletes,
         inserts
@@ -634,9 +662,9 @@ export default {
     }
 
     const saveColumnWidths = async () => {
-      let fav = await callMain('getFavourite', { connectionId });
+      let fav = await callMain('getFavourite', { connectionId: props.connectionId });
 
-      let path = ['columnWidths', connectionInfo.database, props.table.schema, props.table.name];
+      let path = ['columnWidths', props.database, props.schema, props.table];
       deepSet(fav, {}, ...path);
       data.value.fields.forEach((field, index) => {
         deepSet(fav, columnWidths[index], ...path, field);

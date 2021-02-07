@@ -63,6 +63,9 @@
         </button>
       </div>
       <div class="summary__row">
+        <div v-if="connecting" class="summary__connecting">
+          Connecting...
+        </div>
         <div v-if="error" class="summary__error">
           {{ error }}
         </div>
@@ -157,17 +160,21 @@
       margin-left: 0.5rem;
     }
   }
+
+  &__error, &__connecting {
+    margin-left: auto;
+  }
   
   &__error {
     color: red;
-    margin-left: auto;
   }
 }
 </style>
 
 <script>
-import { ref, reactive } from 'vue';
-import callMain from './callMain';
+import { ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import callMain, { CallMainError } from './callMain';
 import DropdownMenu from './DropdownMenu.vue';
 
 export default {
@@ -180,16 +187,27 @@ export default {
   emits: ['edit', 'done', 'duplicate', 'delete'],
   setup(props, { emit }) {
     const error = ref(null);
+    const connecting = ref(false);
+    const router = useRouter();
 
     const connect = async () => {
+      error.value = null;
+      connecting.value = true;
       if (props.isEditing) emit('done');
       try {
         let data = await callMain('connect', props.connection);
-        window.location.hash = `database/${data.id}`;
+        router.push({ name: 'Tables', params: { connectionId: data.id, database: defaultDatabase() } });
       } catch (e) {
-        error.value = e.message;
+        if (e instanceof CallMainError) error.value = e.message;
+        else throw e;
+      } finally {
+        connecting.value = false;
       }
     };
+
+    watch(() => props.isEditing, () => {
+      error.value = null;
+    });
 
     const optionSelected = option => {
       switch (option) {
@@ -198,8 +216,13 @@ export default {
       }
     }
 
+    const defaultDatabase = () => {
+      return props.connection.database || props.connection.user || props.username;
+    };
+
     return {
       error,
+      connecting,
       connect,
       optionSelected,
     }
