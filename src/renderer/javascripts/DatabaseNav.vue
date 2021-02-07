@@ -19,7 +19,7 @@
         {{ database }}
       </router-link>
       <a class="nav__breadcrumb" href="javascript:void(0);" v-if="connection && database && table">
-        <table-icon class="nav__breadcrumb-icon nav__breadcrumb-icon--table" />
+        <table-icon :class="`nav__breadcrumb-icon nav__breadcrumb-icon--${tableType}`" />
         {{ table }}
       </a>
     </div>
@@ -135,6 +135,14 @@
   &__breadcrumb-icon {
     margin-right: 0.5rem;
     color: map-get($gray, default);
+
+    &--view {
+      color: $view-icon-color;
+    }
+
+    &--table {
+      color: $table-icon-color;
+    }
   }
 
   &__status-bar {
@@ -202,6 +210,7 @@ export default {
     const connection = ref(null);
     const database = computed(() => route.params.database);
     const table = computed(() => route.params.table);
+    const tableType = computed(() => route.params.tableType);
 
     const toggleLeftBar = () => {
       emit('update:leftBarOpen', !props.leftBarOpen);
@@ -227,6 +236,7 @@ export default {
       refresh,
       database,
       table,
+      tableType,
     }
   }
 }
