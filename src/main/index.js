@@ -141,7 +141,7 @@ respondToRenderer('fetchTables', async (data) => {
   let connection = PgConnection.find(data.connectionId);
   if (!connection) return;
 
-  return await connection.fetchTables();
+  return await connection.fetchTables(data.database);
 });
 
 respondToRenderer('fetchData', async (data) => {

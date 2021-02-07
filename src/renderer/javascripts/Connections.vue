@@ -13,12 +13,13 @@
       <li v-for="connection in connections" :key="connection.id" class="connection">
         <Connection
           :connection="connection"
-          :isEditing="editingConnectionId === connection.id"
+          :is-editing="editingConnectionId === connection.id"
           :username="currentUsername"
           @edit="editingConnectionId = connection.id"
           @done="editingConnectionId = null"
           @duplicate="duplicate(connection)"
-          @delete="deleteConnection(connection)" />
+          @delete="deleteConnection(connection)"
+        />
       </li>
     </ul>
   </div>

@@ -8,7 +8,7 @@
         v-if="publicTables.length > 0"
         class="grid"
         :items="publicTables.map(tableItem)"
-        @open="$emit('open-table', $event.table)"
+        @open="openTable($event.table)"
       >
         <template #icon="{ item }">
           <table-big-icon :class="`icon ${tableIconClass(item.table)}`" />
@@ -23,7 +23,7 @@
         <IconGrid
           v-if="schema.isOpen"
           :items="schema.tables.map(tableItem)"
-          @open="$emit('open-table', $event.table)"
+          @open="openTable($event.table)"
         >
           <template #icon="{ item }">
             <table-big-icon :class="`icon ${tableIconClass(item.table)}`" />
@@ -87,6 +87,7 @@
 
 <script>
 import { inject, ref, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
 import callMain from './callMain';
 
 import IconGrid from './IconGrid.vue';
@@ -102,9 +103,12 @@ export default {
     SchemaIcon,
     Triangle,
   },
-  emits: ['open-table'],
-  setup() {
-    const connectionId = inject('connectionId');
+  props: {
+    connectionId: { type: String, required: true },
+    database: { type: String, required: true },
+  },
+  setup(props) {
+    const router = useRouter();
     const eventTarget = inject('eventTarget');
 
     const loading = ref(true);
@@ -114,7 +118,7 @@ export default {
     const loadTables = async () => {
       try {
         loading.value = true;
-        let result = await callMain('fetchTables', { connectionId });
+        let result = await callMain('fetchTables', { connectionId: props.connectionId, database: props.database });
         publicTables.value = result.publicTables;
         otherSchemas.value = result.otherSchemas;
       } catch(error) {
@@ -151,6 +155,18 @@ export default {
       };
     };
 
+    const openTable = (table) => {
+      router.push({
+        name: 'TableContent',
+        params: {
+          connectionId: props.connectionId,
+          database: props.database,
+          schema: table.schema,
+          table: table.name,
+        },
+      });
+    };
+
     return {
       loading,
       publicTables,
@@ -158,6 +174,7 @@ export default {
       toggleSchema,
       tableItem,
       tableIconClass,
+      openTable,
     };
   }
 }

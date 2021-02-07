@@ -13,7 +13,8 @@
     "pg-native": "^3.0.0",
     "username": "^5.1.0",
     "uuid": "^8.3.2",
-    "vue": "^3.0.0-0"
+    "vue": "^3.0.0-0",
+    "vue-router": "^4.0.3"
   },
   "license": "ISC",
   "devDependencies": {

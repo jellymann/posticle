@@ -1,22 +1,15 @@
 <template>
   <div class="container">
     <database-nav
-      :show-databases="showDatabases"
-      :table="currentTable"
       v-model:leftBarOpen="leftBarOpen"
       v-model:rightBarOpen="rightBarOpen"
-      @breadcrumb="breadcrumbSelected"
-      @refresh="refresh"
     />
     <div class="main">
       <div class="main__left" v-show="leftBarOpen">
-        <schema v-model="currentTable" v-if="connected" />
+        <schema v-if="connected" />
       </div>
       <div class="main__content">
-        <!-- TODO: probably use an actual router for this :/ -->
-        <database-list v-if="showDatabases && !currentTable" @open-database="openDatabase" />
-        <table-list v-if="!showDatabases && !currentTable" @open-table="currentTable = $event" />
-        <table-view :table="currentTable" v-if="!showDatabases && currentTable" />
+        <router-view></router-view>
       </div>
       <div class="main__right" v-show="rightBarOpen"></div>
     </div>
@@ -63,27 +56,19 @@
 <script>
 import { provide, ref } from 'vue';
 import Schema from './Schema.vue';
-import DatabaseList from './DatabaseList.vue'
-import TableList from './TableList.vue'
-import TableView from './TableView.vue'
 import DatabaseNav from './DatabaseNav.vue';
-import callMain from './callMain';
 
 export default {
   components: {
     Schema,
-    DatabaseList,
-    TableList,
-    TableView,
     DatabaseNav,
   },
   props: {
-    id: { type: String, required: true },
+    connectionId: { type: String, required: true },
   },
-  setup(props) {
+  setup() {
     const eventTarget = new EventTarget();
     provide('eventTarget', eventTarget);
-    provide('connectionId', props.id);
 
     const currentTable = ref(null);
     const showDatabases = ref(false);
@@ -91,45 +76,11 @@ export default {
     const rightBarOpen = ref(false);
     const connected = ref(true);
 
-    const breadcrumbSelected = async (breadcrumb) => {
-      switch (breadcrumb) {
-        case 'host':
-          await useDatabase('postgres');
-          currentTable.value = null;
-          showDatabases.value = true;
-          break;
-        case 'database':
-          currentTable.value = null;
-          showDatabases.value = false;
-          break;
-      }
-    };
-
-    const refresh = () => {
-      const refreshEvent = new CustomEvent('refresh');
-      eventTarget.dispatchEvent(refreshEvent);
-    };
-
-    const openDatabase = async (database) => {
-      await useDatabase(database);
-      showDatabases.value = false;
-      currentTable.value = null;
-    };
-
-    const useDatabase = async (database) => {
-      connected.value = false;
-      await callMain('useDatabase', { connectionId: props.id, database });
-      connected.value = true;
-    }
-
     return {
       currentTable,
       leftBarOpen,
       rightBarOpen,
-      breadcrumbSelected,
-      refresh,
       showDatabases,
-      openDatabase,
       connected,
     };
   },

@@ -10,18 +10,18 @@
     </div>
 
     <div class="nav__breadcrumbs">
-      <button class="nav__breadcrumb" @click="breadcrumbHost">
+      <router-link class="nav__breadcrumb" :to="{ name: 'Databases', params: { id: connection.id } }" v-if="connection">
         <posticle-icon class="nav__breadcrumb-icon nav__breadcrumb-icon--host" />
-        {{ connection ? connection.host : '...' }}
-      </button>
-      <button class="nav__breadcrumb" @click="breadcrumbDatabase" v-if="connection && connection.database && !showDatabases">
+        {{ connection.host }}
+      </router-link>
+      <router-link class="nav__breadcrumb" :to="{ name: 'Tables', params: { id: connection.id, database } }" v-if="connection && database">
         <database-icon class="nav__breadcrumb-icon nav__breadcrumb-icon--database" />
-        {{ connection ? connection.database : '...' }}
-      </button>
-      <button class="nav__breadcrumb" v-if="connection && table && !showDatabases">
-        <table-icon :class="{ 'nav__breadcrumb-icon': true, [`nav__breadcrumb-icon--${tableType}`]: true }" />
-        {{ table.name }}
-      </button>
+        {{ database }}
+      </router-link>
+      <a class="nav__breadcrumb" href="javascript:void(0);" v-if="connection && database && table">
+        <table-icon class="nav__breadcrumb-icon nav__breadcrumb-icon--table" />
+        {{ table }}
+      </a>
     </div>
 
     <div class="nav__status-bar">
@@ -134,22 +134,7 @@
 
   &__breadcrumb-icon {
     margin-right: 0.5rem;
-
-    &--host {
-      color: map-get($gray, default);
-    }
-
-    &--database {
-      color: map-get($gray, default);
-    }
-
-    &--view {
-      color: $view-icon-color
-    }
-
-    &--table {
-      color: $table-icon-color
-    }
+    color: map-get($gray, default);
   }
 
   &__status-bar {
@@ -181,7 +166,9 @@
 </style>
 
 <script>
-import { ref, inject, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
+import { useRoute } from 'vue-router';
+
 import callMain from './callMain';
 import TableIcon from '../images/table.svg';
 import DatabaseIcon from '../images/database.svg';
@@ -204,58 +191,42 @@ export default {
     SidebarRightIcon
   },
   props: {
-    table: { type: Object, default: null },
-    showDatabases: Boolean,
     leftBarOpen: Boolean,
     rightBarOpen: Boolean
   },
-  emits: ['update:leftBarOpen', 'update:rightBarOpen', 'breadcrumb', 'refresh'],
+  emits: ['update:leftBarOpen', 'update:rightBarOpen', 'breadcrumb'],
   setup(props, { emit }) {
-    const connectionId = inject('connectionId');
+    const route = useRoute();
+    const eventTarget = inject('eventTarget');
 
     const connection = ref(null);
+    const database = computed(() => route.params.database);
+    const table = computed(() => route.params.table);
 
     const toggleLeftBar = () => {
-      emit('update:leftBarOpen', !props.leftBarOpen.value);
+      emit('update:leftBarOpen', !props.leftBarOpen);
     }
 
     const toggleRightBar = () => {
-      emit('update:rightBarOpen', !props.rightBarOpen.value);
-    }
-
-    const breadcrumbHost = () => {
-      emit('breadcrumb', 'host');
-    }
-
-    const breadcrumbDatabase = () => {
-      emit('breadcrumb', 'database');
+      emit('update:rightBarOpen', !props.rightBarOpen);
     }
 
     const refresh = () => {
-      emit('refresh');
+      eventTarget.dispatchEvent(new CustomEvent('refresh'));
     }
 
-    const tableType = computed(() => {
-      switch (props.table.type) {
-        case 'VIEW': return 'view';
-        case 'BASE TABLE': return 'table'
-      }
-    });
-
-    callMain('getConnectionInfo', { connectionId })
+    callMain('getConnectionInfo', { connectionId: route.params.connectionId })
       .then(info => {
         connection.value = info;
       });
 
     return {
-      ...props,
       connection,
       toggleLeftBar,
       toggleRightBar,
-      breadcrumbHost,
-      breadcrumbDatabase,
       refresh,
-      tableType
+      database,
+      table,
     }
   }
 }

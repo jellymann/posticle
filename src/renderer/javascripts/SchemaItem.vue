@@ -1,8 +1,22 @@
 <template>
-  <a @click.prevent="click" :class="{ 'item': true, [`item--${itemType}`]: true }">
-    <component :is="icon" class="item__icon" />
-    <span class="item__name">{{ item.name }}</span>
-  </a>
+  <li :class="`tables__${type}`">
+    <router-link :to="{ name: tableRouteName, params: { connectionId, database, schema: item.schema, table: item.name } }" :class="itemClass" v-if="type === 'table'">
+      <table-icon class="item__icon" />
+      <span class="item__name">{{ item.name }}</span>
+    </router-link>
+    <a @click.prevent="isOpen = !isOpen" :class="itemClass" v-if="type === 'schema'">
+      <schema-icon class="item__icon" />
+      <span class="item__name">{{ item.name }}</span>
+    </a>
+    <ul class="schema-tables" v-if="type === 'schema' && isOpen">
+      <schema-item
+        v-for="table in item.tables"
+        :key="table.name"
+        :item="table"
+        type="table"
+      />
+    </ul>
+  </li>
 </template>
 
 <style lang="scss" scoped>
@@ -14,7 +28,7 @@
   align-items: center;
   padding: 0.25rem 0.5rem;
 
-  &:hover {
+  &:hover, &.router-link-active {
     background-color: $highlight-background;
     color: $highlight-foreground;
   }
@@ -49,35 +63,59 @@
     }
   }
 }
+
+.schema-tables {
+  list-style: none;
+  margin: 0;
+  margin-left: 1rem;
+  padding: 0;
+}
 </style>
 
 <script>
+import { computed, ref } from 'vue';
+import { useRoute } from 'vue-router';
+
 import TableIcon from '../images/table.svg';
 import SchemaIcon from '../images/schema.svg';
 
 export default {
-  components: { TableIcon,SchemaIcon },
+  name: 'SchemaItem',
+  components: {
+    TableIcon,
+    SchemaIcon,
+  },
   props: {
     item: { type: Object, required: true },
     type: { type: String, required: true },
   },
-  emits: ['select'],
-  setup(props, { emit }) {
-    const click = () => {
-      emit('select');
-    }
+  setup(props) {
+    const route = useRoute();
 
-    const icon = props.type === 'schema' ? 'schema-icon' : 'table-icon';
-    const itemType = props.type === 'schema' ? 'schema' : (
-      props.item.type === 'VIEW' ? 'view' : 'table'
-    );
+    const connectionId = computed(() => route.params.connectionId);
+    const database = computed(() => route.params.database);
+    const isOpen = ref(props.type === 'schema' && route.params.schema === props.item.name);
+    
+    const itemClass = computed(() => {
+      let itemType;
+      if (props.type === 'schema') itemType = 'schema';
+      else itemType = props.item.type === 'VIEW' ? 'view' : 'table';
+
+      return `item item--${itemType}`;
+    });
+
+    const tableRouteName = computed(() => {
+      if (route.name === 'TableStructure') return 'TableStructure';
+      return 'TableContent';
+    });
 
     return {
-      ...props,
-      itemType,
-      icon,
-      click
-    }
-  }
-}
+      connectionId,
+      database,
+      itemClass,
+      isOpen,
+      tableRouteName,
+    };
+  },
+};
 </script>

@@ -2,60 +2,34 @@
   <div v-if="loading">
     Loading...
   </div>
-  <ul v-else class="tables">
-    <li
+  <ul v-if="!loading && database" class="tables">
+    <schema-item
       v-for="table in publicTables"
       :key="table.name"
-      :class="{ 'tables__table': true, 'tables__table--current': table === currentTable }"
-    >
-      <schema-item :item="table" type="table" @select="selectTable(table)" />
-    </li>
-    <li
+      :item="table"
+      type="table"
+    />
+    <schema-item
       v-for="schema in otherSchemas"
       :key="schema.name"
-      :class="{ 'tables__schema': true, 'tables__schema--open': schema.isOpen }"
-    >
-      <schema-item :item="schema" type="schema" @select="toggleSchema(schema)" />
-      <ul class="tables__schema-tables">
-        <li
-          v-for="table in schema.tables"
-          :key="table.name"
-          :class="{ 'tables__table': true, 'tables__table--current': table === currentTable }"
-        >
-          <schema-item :item="table" type="table" @select="selectTable(table)" />
-        </li>
-      </ul>
-    </li>
+      :item="schema"
+      type="schema"
+    />
   </ul>
 </template>
 
 <style lang="scss" scoped>
 .tables {
-  $block: &;
   list-style: none;
   margin: 0;
   padding: 0;
-
-  &__schema {
-    &--open {
-      #{$block}__schema-tables {
-        display: block;
-      }
-    }
-  }
-
-  &__schema-tables {
-    list-style: none;
-    margin: 0;
-    margin-left: 1rem;
-    padding: 0;
-    display: none;
-  }
 }
 </style>
 
 <script>
-import { ref, inject, onMounted, onBeforeUnmount } from 'vue';
+import { ref, inject, onMounted, onBeforeUnmount, computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
+
 import callMain from './callMain';
 import SchemaItem from './SchemaItem.vue';
 
@@ -63,25 +37,27 @@ export default {
   components: {
     SchemaItem
   },
-  props: {
-    modelValue: { type: Object, default: null }, 
-  },
-  emits: ['update:modelValue'],
-  setup(props, { emit }) {
-    const connectionId = inject('connectionId');
+  setup() {
+    const route = useRoute();
+
+    const connectionId = computed(() => route.params.connectionId);
+    const database = computed(() => route.params.database);
     const eventTarget = inject('eventTarget');
 
-    const currentTable = ref(props.modelValue)
-    const loading = ref(true);
+    const loadedDatabase = ref(null);
+    const loading = ref(false);
     const publicTables = ref([]);
     const otherSchemas = ref([]);
 
-    const loadTables = async () => {
+    const loadTables = async (force = true) => {
+      if (!database.value) return;
+      if (!force && loadedDatabase.value === database.value) return;
       try {
         loading.value = true;
-        let result = await callMain('fetchTables', { connectionId });
+        let result = await callMain('fetchTables', { connectionId: connectionId.value, database: database.value });
         publicTables.value = result.publicTables;
         otherSchemas.value = result.otherSchemas;
+        loadedDatabase.value = database.value;
       } catch(error) {
         console.error(error);
         publicTables.value = [];
@@ -90,16 +66,9 @@ export default {
         loading.value = false;
       }
     }
-    loadTables();
+    loadTables(false);
 
-    const selectTable = (table) => {
-      currentTable.value = table;
-      emit('update:modelValue', table);
-    }
-
-    const toggleSchema = (schema) => {
-      schema.isOpen = !schema.isOpen;
-    }
+    watch(database, () => loadTables(false));
 
     onMounted(() => {
       eventTarget.addEventListener('refresh', loadTables);
@@ -111,11 +80,9 @@ export default {
 
     return {
       loading,
+      database,
       publicTables,
       otherSchemas,
-      currentTable,
-      selectTable,
-      toggleSchema
     };
   }
 }
