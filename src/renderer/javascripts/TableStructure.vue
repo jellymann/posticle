@@ -454,10 +454,12 @@ export default {
         props.table.tablespace !== changes.table.tablespace ||
         structure.value.columns.some((column, index) => {
           let changedColumn = changes.structure.columns[index];
-          return column.name !== changedColumn.name ||
+          return changedColumn.toBeRemoved ||
+            column.name !== changedColumn.name ||
             column.type !== changedColumn.type ||
             column.default !== changedColumn.default; // TODO: compare constraints
-        });
+        }) ||
+        changes.structure.columns.some(column => column.isNew);
         // TODO: indices
     });
 
@@ -485,6 +487,10 @@ export default {
       m.columnChanges = [];
       structure.value.columns.forEach((column, index) => {
         let changedColumn = changes.structure.columns[index];
+        if (changedColumn.toBeRemoved) {
+          m.columnChanges.push({ type: 'remove', column: column.name });
+          return;
+        }
         if (column.name !== changedColumn.name) {
           m.columnChanges.push({ type: 'rename', column: column.name, newName: changedColumn.name });
         }
@@ -495,6 +501,12 @@ export default {
           m.columnChanges.push({ type: 'chbangeDefault', column: changedColumn.name, newDefault: changedColumn.defaultValue });
         }
         // TODO: constraints
+      });
+
+      changes.structure.columns.filter(x => x.isNew).forEach(column => {
+        let change = { type: 'add', column: column.name, dataType: column.type };
+        if (column.defaultValue) change.defaultValue = column.defaultValue;
+        m.columnChanges.push(change);
       });
 
       // TODO: indexes
@@ -514,6 +526,7 @@ export default {
           table: changes.table.name,
         },
       });
+      eventTarget.dispatchEvent(new CustomEvent('refresh'));
     };
 
     return {

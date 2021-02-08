@@ -322,6 +322,17 @@ export default class PgConnection {
         case 'changeDefault':
           queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ALTER COLUMN "${change.column}" SET DEFAULT '${change.newDefault}';`);
           break;
+        case 'remove':
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} DROP COLUMN "${change.column}";`);
+          break;
+        case 'add': {
+          let q = `ALTER TABLE ${this.fullTable(structure.table)} ADD COLUMN "${change.column}" ${change.dataType}`;
+          if (change.defaultValue) {
+            q += ` DEFAULT '${change.defaultValue}'`;
+          }
+          queries.push(q + ';');
+          break;
+        }
       }
     });
 

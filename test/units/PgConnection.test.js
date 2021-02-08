@@ -2,21 +2,21 @@ const { default: PgConnection } = require("../../src/main/PgConnection");
 
 jest.mock('pg');
 
-const ID_STRUCTURE = {
+const ID_STRUCTURE = () => ({
   primaryKey: 'key',
   table: {
     schema: 'public',
     name: 'foo'
   }
-};
+});
 
-const NO_ID_STRUCTURE = {
+const NO_ID_STRUCTURE = () => ({
   primaryKey: null,
   table: {
     schema: 'public',
     name: 'foo'
   }
-}
+});
 
 describe('PgConnection', () => {
   describe('generateChangeQuery', () => {
@@ -32,7 +32,7 @@ describe('PgConnection', () => {
         }]
       }
 
-      let sql = new PgConnection().generateChangeQuery(changes, ID_STRUCTURE);
+      let sql = new PgConnection().generateChangeQuery(changes, ID_STRUCTURE());
       
       expect(sql).toEqual(`UPDATE "public"."foo" SET "bar"='baz' WHERE "key"=1234;`);
     });
@@ -46,7 +46,7 @@ describe('PgConnection', () => {
         deletes: [{ key: 1234 }, { key: 2345 }]
       }
 
-      let sql = new PgConnection().generateChangeQuery(changes, ID_STRUCTURE);
+      let sql = new PgConnection().generateChangeQuery(changes, ID_STRUCTURE());
 
       expect(sql).toEqual(`DELETE FROM "public"."foo" WHERE "key"=1234 OR "key"=2345;`);
     });
@@ -63,7 +63,7 @@ describe('PgConnection', () => {
         ]
       }
 
-      let sql = new PgConnection().generateChangeQuery(changes, ID_STRUCTURE);
+      let sql = new PgConnection().generateChangeQuery(changes, ID_STRUCTURE());
 
       expect(sql).toEqual(`INSERT INTO "public"."foo"("bar", "baz") VALUES('A', 'B');\n`+
                           `INSERT INTO "public"."foo"("bar", "baz") VALUES('C', 'D');`);
@@ -80,7 +80,7 @@ describe('PgConnection', () => {
         ]
       }
 
-      let sql = new PgConnection().generateChangeQuery(changes, ID_STRUCTURE);
+      let sql = new PgConnection().generateChangeQuery(changes, ID_STRUCTURE());
 
       expect(sql).toEqual(`INSERT INTO "public"."foo" VALUES(DEFAULT);`);
     });
@@ -102,7 +102,7 @@ describe('PgConnection', () => {
         ]
       }
 
-      let sql = new PgConnection().generateChangeQuery(changes, ID_STRUCTURE);
+      let sql = new PgConnection().generateChangeQuery(changes, ID_STRUCTURE());
 
       expect(sql).toEqual(`UPDATE "public"."foo" SET "bar"='baz' WHERE "key"=1234;\n`+
                           `DELETE FROM "public"."foo" WHERE "key"=1234 OR "key"=2345;\n`+
@@ -126,7 +126,7 @@ describe('PgConnection', () => {
         ]
       }
 
-      let sql = new PgConnection().generateChangeQuery(changes, NO_ID_STRUCTURE);
+      let sql = new PgConnection().generateChangeQuery(changes, NO_ID_STRUCTURE());
 
       expect(sql).toEqual(
         `UPDATE "public"."foo" SET "baz"='W'`+
@@ -155,7 +155,7 @@ describe('PgConnection', () => {
         ],
       };
 
-      let sql = new PgConnection().generateTableChangeQuery(changes, ID_STRUCTURE);
+      let sql = new PgConnection().generateTableChangeQuery(changes, ID_STRUCTURE());
 
       expect(sql).toEqual(
         `ALTER TABLE "public"."foo" RENAME TO "bar";\n` +
@@ -164,6 +164,48 @@ describe('PgConnection', () => {
         `ALTER TABLE "private"."bar" ALTER COLUMN "qux" TYPE integer;\n` +
         `ALTER TABLE "private"."bar" ALTER COLUMN "qux" SET DEFAULT '7';`
       );
+
+      // TODO: alter table constraints
     });
-  })
+
+    it('generates queries to remove columns', () => {
+      let changes = {
+        table: {
+          schema: 'public',
+          name: 'foo',
+        },
+        tableChanges: {},
+        columnChanges: [
+          { type: 'remove', column: 'baz' },
+        ],
+      };
+
+      let sql = new PgConnection().generateTableChangeQuery(changes, ID_STRUCTURE());
+      expect(sql).toEqual(
+        `ALTER TABLE "public"."foo" DROP COLUMN "baz";`
+      );
+    });
+
+    it('generates queries to add columns', () => {
+      let changes = {
+        table: {
+          schema: 'public',
+          name: 'foo',
+        },
+        tableChanges: {},
+        columnChanges: [
+          { type: 'add', column: 'qux', dataType: 'text' },
+          { type: 'add', column: 'norf', dataType: 'integer', defaultValue: '7' },
+        ],
+      };
+
+      let sql = new PgConnection().generateTableChangeQuery(changes, ID_STRUCTURE());
+      expect(sql).toEqual(
+        `ALTER TABLE "public"."foo" ADD COLUMN "qux" text;\n` +
+        `ALTER TABLE "public"."foo" ADD COLUMN "norf" integer DEFAULT '7';`
+      );
+
+      // TODO: add column with constraints
+    });
+  });
 });
