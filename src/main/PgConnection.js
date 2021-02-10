@@ -158,10 +158,6 @@ export default class PgConnection {
       AND table_name = '${table.name}'
     `);
 
-    console.log("RESUUUUUUUUUUUUUUUUUUUUUUUUUUULT")
-    console.log(table)
-    console.log(tableResult);
-
     let type = tableResult.rows[0].table_type;
 
     let result = await this.query({

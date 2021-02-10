@@ -63,7 +63,6 @@ app.on('activate', () => {
 });
 
 let favouritesPath = path.join(app.getPath('userData'), 'favourites.json');
-console.log(`FAVOURITES PATH: ${favouritesPath}`);
 
 async function getFavourites() {
   let favourites = [];
