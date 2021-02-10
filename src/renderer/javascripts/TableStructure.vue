@@ -55,8 +55,8 @@
             </td>
             <td class="table-cell">
               <div class="flex">
-                <select>
-                  <option value="">
+                <select class="table-button">
+                  <option :value="null">
                     no default
                   </option>
                   <option value="constant">
@@ -74,10 +74,10 @@
             </td>
             <td class="table-cell">
               <div class="flex">
-                <button v-for="constraint in column.constraints" :key="constraint" class="constraint">
+                <button v-for="constraint in column.constraints" :key="constraint" class="table-button">
                   {{ constraint }}
                 </button>
-                <button class="new-constraint">
+                <button class="table-button new-constraint">
                   <plus-icon />
                 </button>
               </div>
@@ -104,18 +104,20 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(index, i) in changes.structure.indexes" :key="i">
+          <tr v-for="(index, i) in changes.structure.indexes" :key="i"  :class="{ 'removed': index.toBeRemoved }">
             <td class="table-cell">
               <input type="text" class="table-input" v-model="index.name" />
             </td>
             <td class="table-cell">
-              {{ index.type }}
+              <span :class="`table-button index-${index.type}`">{{ INDEX_TYPE_LABELS[index.type] }}</span>
             </td>
             <td class="table-cell">
-              <span v-for="column in index.columns" :key="column">{{ column }}</span>
+              <span v-for="column in index.columns" :key="column" class="table-button">
+                {{ column }}
+              </span>
             </td>
             <td>
-              <button class="remove-button">
+              <button class="remove-button" @click="removeIndex(index)">
                 <minus-icon />
               </button>
             </td>
@@ -249,7 +251,7 @@ td {
 }
 
 .table-cell {
-    position: relative;
+  position: relative;
   font-size: 0.75rem;
   border-top: 1px solid map-get($gray, lighter);
   border-bottom: 1px solid map-get($gray, light);
@@ -293,8 +295,10 @@ td {
     margin: 0.25rem 0;
   }
 
-  select, button:first-child {
-    margin-left: 0.5rem;
+  select, button, .table-button {
+    &:first-child {
+      margin-left: 0.25rem;
+    }
   }
 }
 
@@ -315,8 +319,16 @@ td {
   padding: 0.25rem 0.5rem;
 }
 
-.constraint {
+.table-button {
+  border: 1px solid map-get($gray, default);
+  border-radius: $border-radius-small;
+  background: map-get($gray, lighter);
   font-size: 0.75rem;
+  padding: 0.0625rem 0.25rem;
+
+  & + & {
+    margin-left: 0.25rem;
+  }
 }
 
 .new-constraint {
@@ -376,6 +388,12 @@ import ToggleButtons from './ToggleButtons.vue';
 
 import PlusIcon from '../images/plus.svg';
 import MinusIcon from '../images/minus.svg';
+
+const INDEX_TYPE_LABELS = {
+  index: 'Index',
+  unique: 'Unique Index',
+  primary: 'Primary Key Index',
+};
 
 export default {
   components: {
@@ -440,6 +458,15 @@ export default {
       }
     };
 
+    const removeIndex = (index) => {
+      if (index.isNew) {
+        let indexs = changes.structure.indexs;
+        indexs.splice(indexs.indexOf(index), 1);
+      } else {
+        index.toBeRemoved = !index.toBeRemoved;
+      }
+    };
+
     const newColumn = () => {
       changes.structure.columns.push({
         name: '',
@@ -467,8 +494,11 @@ export default {
             column.type !== changedColumn.type ||
             column.default !== changedColumn.default; // TODO: compare constraints
         }) ||
-        changes.structure.columns.some(column => column.isNew);
-        // TODO: indices
+        changes.structure.columns.some(column => column.isNew) ||
+        structure.value.indexes.some((index, i) => {
+          let changedIndex = changes.structure.indexes[i];
+          return changedIndex.toBeRemoved || index.name !== changedIndex.name;
+        });
     });
 
     const discardChanges = () => {
@@ -542,11 +572,13 @@ export default {
       structure,
       loading,
       removeColumn,
+      removeIndex,
       newColumn,
       newIndex,
       hasChanges,
       discardChanges,
       performChanges,
+      INDEX_TYPE_LABELS,
     };
   },
 };

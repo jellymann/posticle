@@ -5,6 +5,8 @@ import buildWhereFromFilters from './buildWhereFromFilter';
 
 const CONNECTIONS = {};
 
+const INDEXDEF_RGX = /^CREATE (UNIQUE )?INDEX \w+ ON .+ USING (\w+) \(([^)]+)\)$/
+
 export default class PgConnection {
   constructor(config = {}) {
     this.config = config;
@@ -191,6 +193,16 @@ export default class PgConnection {
       primaryKey = pkeysResult.rows[0].key_column;
     }
 
+    let indexResult = await this.query({
+      text: `
+        SELECT indexname, indexdef
+        FROM pg_indexes
+        WHERE schemaname = $1
+        AND tablename = $2;
+      `,
+      values: [table.schema, table.name]
+    });
+
     return {
       table: { ...table, type },
       primaryKey,
@@ -210,7 +222,41 @@ export default class PgConnection {
             row.data_type == "text" ||
             row.data_type == "character varying"
         };
+      }),
+      indexes: indexResult.rows.map(row => {
+        return {
+          name: row.indexname,
+          ...this.parseIndexDefinition(row.indexdef, primaryKey)
+        };
       })
+    };
+  }
+
+  /**
+   * 
+   * @param {String} indexdef 
+   */
+  parseIndexDefinition(indexdef, primaryKey) {
+    let match = indexdef.match(INDEXDEF_RGX);
+    if (!match) throw new Error(`'${indexdef}' is a funky index definition!`);
+
+    let [, unique, method, columns] = match;
+
+    columns = columns.split(',').map(x => x.trim());
+
+    let type = 'index';
+    if (unique) {
+      if (columns.length === 1 && columns[0] === primaryKey) {
+        type = 'primary';
+      } else {
+        type = 'unique';
+      }
+    }
+
+    return {
+      type,
+      method,
+      columns,
     };
   }
 
