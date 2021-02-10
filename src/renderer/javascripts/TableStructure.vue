@@ -91,7 +91,9 @@
         </tbody>
       </table>
 
-      <h1>Indexes</h1>
+      <h1 class="indexes-header">
+        Indexes
+      </h1>
       <table class="table-indexes">
         <thead>
           <tr>
@@ -338,6 +340,12 @@ td {
     width: auto;
     height: 1rem;
   }
+}
+
+.indexes-header {
+  font-size: 1.5rem;
+  font-weight: normal;
+  margin-bottom: 0.25rem;
 }
 
 .status-bar {
