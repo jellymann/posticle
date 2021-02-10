@@ -45,7 +45,7 @@
             <th></th>
           </tr>
         </thead>
-        <tbody>
+        <tbody ref="columnsBody">
           <tr v-for="(column, i) in changes.structure.columns" :key="i" :class="{ 'removed': column.toBeRemoved }">
             <td class="table-cell">
               <input type="text" class="table-input" v-model="column.name" />
@@ -103,18 +103,31 @@
             <th></th>
           </tr>
         </thead>
-        <tbody>
-          <tr v-for="(index, i) in changes.structure.indexes" :key="i"  :class="{ 'removed': index.toBeRemoved }">
+        <tbody ref="indexesBody">
+          <tr v-for="(index, i) in changes.structure.indexes" :key="i" :class="{ 'removed': index.toBeRemoved }">
             <td class="table-cell">
-              <input type="text" class="table-input" v-model="index.name" />
+              <input type="text" class="table-input" v-model="index.name" :placeholder="index.isNew ? `${table}_idx` : structure.indexes[i].name" />
             </td>
             <td class="table-cell">
               <span :class="`table-button index-${index.type}`">{{ INDEX_TYPE_LABELS[index.type] }}</span>
             </td>
             <td class="table-cell">
-              <span v-for="column in index.columns" :key="column" class="table-button">
-                {{ column }}
-              </span>
+              <div class="flex">
+                <span v-for="column in index.columns" :key="column" class="table-button">
+                  {{ column }}
+                </span>
+                <span v-if="index.isNew" class="table-button new-constraint select-button">
+                  <select :id="`index_${i}_column`" @change="addColumnToIndex(index, $event)">
+                    <option :value="null" disabled selected></option>
+                    <option v-for="column in structure.columns" :key="column.name" :value="column.name">
+                      {{ column.name }}
+                    </option>
+                  </select>
+                  <label :for="`index_${i}_column`">
+                    <plus-icon />
+                  </label>
+                </span>
+              </div>
             </td>
             <td>
               <button class="remove-button" @click="removeIndex(index)">
@@ -244,6 +257,7 @@ table {
   margin-bottom: 1rem;
   min-width: 100%;
   border-spacing: 0 0.5rem;
+  padding-right: 0.5rem;
 }
 
 td {
@@ -295,7 +309,7 @@ td {
     margin: 0.25rem 0;
   }
 
-  select, button, .table-button {
+  .table-button {
     &:first-child {
       margin-left: 0.25rem;
     }
@@ -339,6 +353,26 @@ td {
   }
 }
 
+.select-button {
+  position: relative;
+
+  select {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    margin: 0;
+    padding: 0;
+    max-width: 100%;
+    opacity: 0;
+  }
+
+  label {
+    pointer-events: none;
+  }
+}
+
 .remove-button {
   background: none;
   border: none;
@@ -376,7 +410,7 @@ td {
 </style>
 
 <script>
-import { inject, ref, watch, onMounted, onBeforeUnmount, reactive, computed } from 'vue';
+import { inject, ref, watch, onMounted, onBeforeUnmount, reactive, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 
 import callMain from './callMain';
@@ -417,6 +451,9 @@ export default {
     const loading = ref(false);
 
     const changes = reactive({});
+
+    const columnsBody = ref(null);
+    const indexesBody = ref(null);
 
     const loadStructure = async (table) => {
       loading.value = true;
@@ -460,8 +497,8 @@ export default {
 
     const removeIndex = (index) => {
       if (index.isNew) {
-        let indexs = changes.structure.indexs;
-        indexs.splice(indexs.indexOf(index), 1);
+        let indexes = changes.structure.indexes;
+        indexes.splice(indexes.indexOf(index), 1);
       } else {
         index.toBeRemoved = !index.toBeRemoved;
       }
@@ -469,16 +506,37 @@ export default {
 
     const newColumn = () => {
       changes.structure.columns.push({
-        name: '',
-        type: null,
+        name: `column${changes.structure.columns.length}`,
+        type: 'text',
         defaultValue: null,
         constraints: [],
         isNew: true,
       });
+
+      nextTick(() => {
+        columnsBody.value.querySelector('tr:last-child input').select();
+      });
     };
 
     const newIndex = () => {
-      // TODO
+      changes.structure.indexes.push({
+        name: '',
+        type: 'index',
+        method: 'btree',
+        columns: [],
+        isNew: true,
+      });
+
+      nextTick(() => {
+        indexesBody.value.querySelector('tr:last-child input').focus();
+      });
+    };
+
+    const addColumnToIndex = (index, event) => {
+      let column = event.currentTarget.value;
+      event.currentTarget.value = null;
+
+      index.columns.push(column);
     };
 
     const hasChanges = computed(() => {
@@ -498,7 +556,8 @@ export default {
         structure.value.indexes.some((index, i) => {
           let changedIndex = changes.structure.indexes[i];
           return changedIndex.toBeRemoved || index.name !== changedIndex.name;
-        });
+        }) ||
+        changes.structure.indexes.some(index => index.isNew);
     });
 
     const discardChanges = () => {
@@ -575,9 +634,12 @@ export default {
       removeIndex,
       newColumn,
       newIndex,
+      addColumnToIndex,
       hasChanges,
       discardChanges,
       performChanges,
+      columnsBody,
+      indexesBody,
       INDEX_TYPE_LABELS,
     };
   },
