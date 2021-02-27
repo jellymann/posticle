@@ -212,10 +212,30 @@ export default class PgConnection {
         if (row.column_name === primaryKey) constraints.push('PRIMARY KEY');
         if (row.is_nullable === 'NO') constraints.push('NOT NULL');
 
+        let defaultValue = row.column_default;
+        let defaultType = 'expression';
+        let constRgx = new RegExp(`^'(.+)'::${row.data_type}$`);
+        let seqRgx = new RegExp("^nextval\\('(.+)'::regclass\\)$")
+        if (defaultValue) {
+          let match;
+          // eslint-disable-next-line no-cond-assign
+          if (match = defaultValue.match(constRgx)) {
+            defaultValue = match[1];
+            defaultType = 'constant';
+          // eslint-disable-next-line no-cond-assign
+          } else if (match = defaultValue.match(seqRgx)) {
+            defaultValue = match[1];
+            defaultType = 'sequence';
+          }
+        } else {
+          defaultType = null;
+        }
+
         return {
           name: row.column_name,
           type: row.data_type,
-          defaultValue: row.column_default,
+          defaultType,
+          defaultValue,
           constraints,
           isStringish:
             row.data_type == "string" ||
@@ -361,8 +381,12 @@ export default class PgConnection {
         case 'changeType':
           queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ALTER COLUMN "${change.column}" TYPE ${change.newType};`);
           break;
-        case 'changeDefault':
-          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ALTER COLUMN "${change.column}" SET DEFAULT '${change.newDefault}';`);
+        case 'changeDefault': {
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ALTER COLUMN "${change.column}" SET DEFAULT ${this.formatDefaultValue(change.newDefault, change.newDefaultType)};`);
+          break;
+        }
+        case 'removeDefault':
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ALTER COLUMN "${change.column}" DROP DEFAULT;`);
           break;
         case 'remove':
           queries.push(`ALTER TABLE ${this.fullTable(structure.table)} DROP COLUMN "${change.column}";`);
@@ -370,7 +394,7 @@ export default class PgConnection {
         case 'add': {
           let q = `ALTER TABLE ${this.fullTable(structure.table)} ADD COLUMN "${change.column}" ${change.dataType}`;
           if (change.defaultValue) {
-            q += ` DEFAULT '${change.defaultValue}'`;
+            q += ` DEFAULT ${this.formatDefaultValue(change.defaultValue, change.defaultType)}`;
           }
           queries.push(q + ';');
           break;
@@ -381,6 +405,17 @@ export default class PgConnection {
     // TODO: indexes
 
     return queries.join("\n");
+  }
+
+  formatDefaultValue(value, type) {
+    switch (type) {
+      case 'constant':
+        return `'${value}'`;
+      case 'sequence':
+        return `nextval('${value}'::regclass)`;
+      default:
+        return value;
+    }
   }
 
   fullTable({ name, schema }) {

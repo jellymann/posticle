@@ -55,7 +55,7 @@
             </td>
             <td class="table-cell">
               <div class="flex">
-                <select class="table-button">
+                <select class="table-button" v-model="column.defaultType" @change.passive="changeColumnDefault(column)">
                   <option :value="null">
                     no default
                   </option>
@@ -509,6 +509,7 @@ export default {
         name: `column${changes.structure.columns.length}`,
         type: 'text',
         defaultValue: null,
+        defaultType: null,
         constraints: [],
         isNew: true,
       });
@@ -517,6 +518,12 @@ export default {
         columnsBody.value.querySelector('tr:last-child input').select();
       });
     };
+
+    const changeColumnDefault = (column) => {
+      if (!column.defaultType) {
+        column.defaultValue = '';
+      }
+    }
 
     const newIndex = () => {
       changes.structure.indexes.push({
@@ -550,7 +557,8 @@ export default {
           return changedColumn.toBeRemoved ||
             column.name !== changedColumn.name ||
             column.type !== changedColumn.type ||
-            column.default !== changedColumn.default; // TODO: compare constraints
+            column.defaultValue !== changedColumn.defaultValue ||
+            column.defaultType !== changedColumn.defaultType; // TODO: compare constraints
         }) ||
         changes.structure.columns.some(column => column.isNew) ||
         structure.value.indexes.some((index, i) => {
@@ -594,15 +602,22 @@ export default {
         if (column.type !== changedColumn.type) {
           m.columnChanges.push({ type: 'changeType', column: changedColumn.name, newType: changedColumn.type });
         }
-        if (column.defaultValue !== changedColumn.defaultValue) {
-          m.columnChanges.push({ type: 'chbangeDefault', column: changedColumn.name, newDefault: changedColumn.defaultValue });
+        if (column.defaultValue !== changedColumn.defaultValue || column.defaultType !== changedColumn.defaultType) {
+          if (changedColumn.defaultType) {
+            m.columnChanges.push({ type: 'changeDefault', column: changedColumn.name, newDefault: changedColumn.defaultValue, newDefaultType: changedColumn.defaultType });
+          } else {
+            m.columnChanges.push({ type: 'removeDefault', column: changedColumn.name });
+          }
         }
         // TODO: constraints
       });
 
       changes.structure.columns.filter(x => x.isNew).forEach(column => {
         let change = { type: 'add', column: column.name, dataType: column.type };
-        if (column.defaultValue) change.defaultValue = column.defaultValue;
+        if (column.defaultType) {
+          change.defaultValue = column.defaultValue;
+          change.defaultType = column.defaultType;
+        }
         m.columnChanges.push(change);
       });
 
@@ -640,6 +655,7 @@ export default {
       performChanges,
       columnsBody,
       indexesBody,
+      changeColumnDefault,
       INDEX_TYPE_LABELS,
     };
   },

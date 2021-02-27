@@ -151,7 +151,10 @@ describe('PgConnection', () => {
         columnChanges: [
           { type: 'rename', column: 'baz', newName: 'qux' },
           { type: 'changeType', column: 'qux', newType: 'integer' },
-          { type: 'changeDefault', column: 'qux', newDefault: '7' },
+          { type: 'changeDefault', column: 'qux', newDefault: '7', newDefaultType: 'expression' },
+          { type: 'changeDefault', column: 'norf', newDefault: 'asdf', newDefaultType: 'constant' },
+          { type: 'changeDefault', column: 'plop', newDefault: 'qwer', newDefaultType: 'sequence' },
+          { type: 'removeDefault', column: 'wat' },
         ],
       };
 
@@ -162,7 +165,10 @@ describe('PgConnection', () => {
         `ALTER TABLE "public"."bar" SET SCHEMA "private";\n` +
         `ALTER TABLE "private"."bar" RENAME COLUMN "baz" TO "qux";\n` +
         `ALTER TABLE "private"."bar" ALTER COLUMN "qux" TYPE integer;\n` +
-        `ALTER TABLE "private"."bar" ALTER COLUMN "qux" SET DEFAULT '7';`
+        `ALTER TABLE "private"."bar" ALTER COLUMN "qux" SET DEFAULT 7;\n` +
+        `ALTER TABLE "private"."bar" ALTER COLUMN "norf" SET DEFAULT 'asdf';\n` +
+        `ALTER TABLE "private"."bar" ALTER COLUMN "plop" SET DEFAULT nextval('qwer'::regclass);\n` +
+        `ALTER TABLE "private"."bar" ALTER COLUMN "wat" DROP DEFAULT;`
       );
 
       // TODO: alter table constraints
@@ -195,14 +201,18 @@ describe('PgConnection', () => {
         tableChanges: {},
         columnChanges: [
           { type: 'add', column: 'qux', dataType: 'text' },
-          { type: 'add', column: 'norf', dataType: 'integer', defaultValue: '7' },
+          { type: 'add', column: 'norf', dataType: 'integer', defaultValue: '7', defaultType: 'expression' },
+          { type: 'add', column: 'wat', dataType: 'text', defaultValue: 'asdf', defaultType: 'constant' },
+          { type: 'add', column: 'plop', dataType: 'character varying', defaultValue: 'qwer', defaultType: 'sequence' },
         ],
       };
 
       let sql = new PgConnection().generateTableChangeQuery(changes, ID_STRUCTURE());
       expect(sql).toEqual(
         `ALTER TABLE "public"."foo" ADD COLUMN "qux" text;\n` +
-        `ALTER TABLE "public"."foo" ADD COLUMN "norf" integer DEFAULT '7';`
+        `ALTER TABLE "public"."foo" ADD COLUMN "norf" integer DEFAULT 7;\n` +
+        `ALTER TABLE "public"."foo" ADD COLUMN "wat" text DEFAULT 'asdf';\n` +
+        `ALTER TABLE "public"."foo" ADD COLUMN "plop" character varying DEFAULT nextval('qwer'::regclass);`
       );
 
       // TODO: add column with constraints
