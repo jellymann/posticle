@@ -210,7 +210,7 @@ export default class PgConnection {
         let constraints = [];
 
         if (row.column_name === primaryKey) constraints.push('PRIMARY KEY');
-        if (row.is_nullable === 'NO') constraints.push('NOT NULL');
+        if (row.is_nullable === 'NO' && row.column_name !== primaryKey) constraints.push('NOT NULL');
 
         let defaultValue = row.column_default;
         let defaultType = 'expression';

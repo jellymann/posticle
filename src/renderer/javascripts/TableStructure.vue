@@ -74,7 +74,7 @@
             </td>
             <td class="table-cell">
               <div class="flex">
-                <button v-for="constraint in column.constraints" :key="constraint" class="table-button">
+                <button v-for="constraint in column.constraints" :key="constraint" :class="`table-button table-button--${constraint.replace(/\s/g, '-').toLowerCase()}`">
                   {{ constraint }}
                 </button>
                 <button class="table-button new-constraint">
@@ -109,7 +109,7 @@
               <input type="text" class="table-input" v-model="index.name" :placeholder="index.isNew ? `${table}_idx` : structure.indexes[i].name" />
             </td>
             <td class="table-cell">
-              <span :class="`table-button index-${index.type}`">{{ INDEX_TYPE_LABELS[index.type] }}</span>
+              <span :class="`table-button table-button--${index.type}-index`">{{ INDEX_TYPE_LABELS[index.type] }}</span>
             </td>
             <td class="table-cell">
               <div class="flex">
@@ -334,14 +334,19 @@ td {
 }
 
 .table-button {
-  border: 1px solid map-get($gray, default);
+  border: 1px solid map-get($gray, light);
   border-radius: $border-radius-small;
-  background: map-get($gray, lighter);
+  background: map-get($gray, lightest);
   font-size: 0.75rem;
   padding: 0.0625rem 0.25rem;
 
   & + & {
     margin-left: 0.25rem;
+  }
+
+  &--primary-key, &--primary-index {
+    background-color: $primary-key-background;
+    border-color: $primary-key-border;
   }
 }
 
