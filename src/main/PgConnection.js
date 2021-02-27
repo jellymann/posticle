@@ -242,7 +242,7 @@ export default class PgConnection {
 
         let defaultValue = row.column_default;
         let defaultType = 'expression';
-        let constRgx = new RegExp(`^'(.+)'::${row.data_type}$`);
+        let constRgx = new RegExp(`^'(.*)'::${row.data_type}$`);
         let seqRgx = new RegExp("^nextval\\('(.+)'::regclass\\)$")
         if (defaultValue) {
           let match;
