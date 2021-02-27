@@ -74,8 +74,8 @@
             </td>
             <td class="table-cell">
               <div class="flex">
-                <button v-for="constraint in column.constraints" :key="constraint" :class="`table-button table-button--${constraint.replace(/\s/g, '-').toLowerCase()}`">
-                  {{ constraint }}
+                <button v-for="constraint in column.constraints" :key="constraint" :class="`table-button table-button--${constraint.type}`">
+                  {{ constraintText(constraint) }}
                 </button>
                 <button class="table-button new-constraint">
                   <plus-icon />
@@ -109,7 +109,7 @@
               <input type="text" class="table-input" v-model="index.name" :placeholder="index.isNew ? `${table}_idx` : structure.indexes[i].name" />
             </td>
             <td class="table-cell">
-              <span :class="`table-button table-button--${index.type}-index`">{{ INDEX_TYPE_LABELS[index.type] }}</span>
+              <span :class="`table-button table-button--${index.type}`">{{ INDEX_TYPE_LABELS[index.type] }}</span>
             </td>
             <td class="table-cell">
               <div class="flex">
@@ -344,9 +344,19 @@ td {
     margin-left: 0.25rem;
   }
 
-  &--primary-key, &--primary-index {
+  &--primary {
     background-color: $primary-key-background;
     border-color: $primary-key-border;
+  }
+
+  &--foreign {
+    background-color: $foreign-key-background;
+    border-color: $foreign-key-border;
+  }
+
+  &--unique {
+    background-color: $unique-background;
+    border-color: $unique-border;
   }
 }
 
@@ -459,6 +469,16 @@ export default {
 
     const columnsBody = ref(null);
     const indexesBody = ref(null);
+
+    const constraintText = (con) => {
+      switch (con.type) {
+        case 'primary': return 'PRIMARY KEY';
+        case 'not_null': return 'NOT NULL';
+        case 'unique': return 'UNIQUE';
+        case 'foreign': return `→ ${con.foreignTable}.${con.foreignColumn}`;
+        case 'check': return con.expression;
+      }
+    }
 
     const loadStructure = async (table) => {
       loading.value = true;
@@ -662,6 +682,7 @@ export default {
       indexesBody,
       changeColumnDefault,
       INDEX_TYPE_LABELS,
+      constraintText,
     };
   },
 };

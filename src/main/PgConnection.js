@@ -5,7 +5,20 @@ import buildWhereFromFilters from './buildWhereFromFilter';
 
 const CONNECTIONS = {};
 
-const INDEXDEF_RGX = /^CREATE (UNIQUE )?INDEX \w+ ON .+ USING (\w+) \(([^)]+)\)$/
+const INDEXDEF_RGX = /^CREATE (UNIQUE )?INDEX .+ ON .+ USING (.+) \((.+)\)$/;
+const PKEY_RGX = /^Y KEY \((.+)\)$/;
+const FKEY_RGX = /^N KEY \((.+)\) REFERENCES (.+)\((.+)\)$/;
+const UNIQ_RGX = /^\((.+)\)$/;
+const CHECK_RGX = /^\(\((.+)\)\)$/;
+
+
+/**
+ * @param {string} s
+ * @returns {string}
+ */
+function dq(s) {
+  return s.replace(/^"(.+)"$/, '$1').replace(/""/g, '"');
+}
 
 export default class PgConnection {
   constructor(config = {}) {
@@ -172,26 +185,40 @@ export default class PgConnection {
       values: [table.schema, table.name]
     });
 
-    let pkeysResult = await this.query({
+    let conResults = await this.query({
       text: `
-        SELECT kcu.column_name AS key_column
-        FROM information_schema.table_constraints tco
-        JOIN information_schema.key_column_usage kcu 
-            ON kcu.constraint_name = tco.constraint_name
-            AND kcu.constraint_schema = tco.constraint_schema
-            AND kcu.constraint_name = tco.constraint_name
-            AND kcu.table_schema = $1
-            AND kcu.table_name = $2
-        WHERE tco.constraint_type = 'PRIMARY KEY'
-        LIMIT 1;
+        SELECT
+          c.conname::information_schema.sql_identifier AS name,
+              c.contype AS type,
+              "substring"(pg_get_constraintdef(c.oid), 7)::information_schema.character_data AS clause
+        FROM pg_namespace nc,
+          pg_namespace nr,
+          pg_constraint c,
+          pg_class r
+        WHERE nc.oid = c.connamespace
+          AND nr.oid = r.relnamespace
+          AND c.conrelid = r.oid
+          AND nr.nspname = $1
+          AND r.relname = $2
+          AND (c.contype <> ALL (ARRAY['t'::"char", 'x'::"char"]))
+          AND (r.relkind = ANY (ARRAY['r'::"char", 'p'::"char"]))
+          AND NOT pg_is_other_temp_schema(nr.oid)
+          AND (pg_has_role(r.relowner, 'USAGE'::text)
+            OR has_table_privilege(r.oid, 'INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER'::text)
+            OR has_any_column_privilege(r.oid, 'INSERT, UPDATE, REFERENCES'::text))
       `,
       values: [table.schema, table.name]
     });
 
-    let primaryKey = null;
-    if (pkeysResult.rows.length === 1) {
-      primaryKey = pkeysResult.rows[0].key_column;
-    }
+    let tableConstraints = conResults.rows.map((con => this.parseConstraint(con)));
+    let primaryCon = tableConstraints.find(con => con.type === 'primary');
+    let primaryKey = primaryCon ? primaryCon.column : null;
+
+    let columnRgx = new RegExp(`(?:^|\\W)(${result.rows.map(c => c.column_name).join('|')})(?:\\W|$)`)
+    tableConstraints.filter(con => con.type === 'check').forEach(con => {
+      let match = con.expression.match(columnRgx);
+      if (match) con.column = dq(match[1]);
+    });
 
     let indexResult = await this.query({
       text: `
@@ -207,10 +234,11 @@ export default class PgConnection {
       table: { ...table, type },
       primaryKey,
       columns: result.rows.map(row => {
-        let constraints = [];
+        let constraints = tableConstraints.filter(con => con.column === row.column_name);
 
-        if (row.column_name === primaryKey) constraints.push('PRIMARY KEY');
-        if (row.is_nullable === 'NO' && row.column_name !== primaryKey) constraints.push('NOT NULL');
+        if (row.is_nullable === 'NO' && row.column_name !== primaryKey) {
+          constraints.push({ type: 'not_null' });
+        }
 
         let defaultValue = row.column_default;
         let defaultType = 'expression';
@@ -252,6 +280,27 @@ export default class PgConnection {
     };
   }
 
+  parseConstraint({ name, type, clause }) {
+    switch (type) {
+      case 'p': {
+        let [, column] = clause.trim().match(PKEY_RGX);
+        return { type: 'primary', name, column };
+      }
+      case 'f': {
+        let [, column, foreignTable, foreignColumn] = clause.trim().match(FKEY_RGX);
+        return { type: 'foreign', name, column: dq(column), foreignTable: dq(foreignTable), foreignColumn: dq(foreignColumn) };
+      }
+      case 'u': {
+        let [, column] = clause.trim().match(UNIQ_RGX);
+        return { type: 'unique', name, column };
+      }
+      case 'c': {
+        let [, expression] = clause.trim().match(CHECK_RGX);
+        return { type: 'check', name, expression };
+      }
+    }
+  }
+
   /**
    * 
    * @param {String} indexdef 
@@ -262,7 +311,7 @@ export default class PgConnection {
 
     let [, unique, method, columns] = match;
 
-    columns = columns.split(',').map(x => x.trim());
+    columns = columns.split(',').map(x => dq(x.trim()));
 
     let type = 'index';
     if (unique) {
