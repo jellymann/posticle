@@ -40,3 +40,15 @@
     @include button;
   }
 }
+
+@mixin removed {
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    height: 2px;
+    left: 0;
+    right: 0;
+    background: red;
+  }
+}

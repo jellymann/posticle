@@ -156,6 +156,11 @@ describe('PgConnection', () => {
           { type: 'changeDefault', column: 'plop', newDefault: 'qwer', newDefaultType: 'sequence' },
           { type: 'removeDefault', column: 'wat' },
         ],
+        constraintChanges: [
+          { type: 'remove', constraintType: 'primary', constraint: 'baz_pkey', column: 'baz' },
+          { type: 'remove', constraintType: 'not_null', constraint: '', column: 'baz' },
+          { type: 'rename', constraint: 'qux_check', newName: 'qux_validation' },
+        ]
       };
 
       let sql = new PgConnection().generateTableChangeQuery(changes, ID_STRUCTURE());
@@ -168,10 +173,12 @@ describe('PgConnection', () => {
         `ALTER TABLE "private"."bar" ALTER COLUMN "qux" SET DEFAULT 7;\n` +
         `ALTER TABLE "private"."bar" ALTER COLUMN "norf" SET DEFAULT 'asdf';\n` +
         `ALTER TABLE "private"."bar" ALTER COLUMN "plop" SET DEFAULT nextval('qwer'::regclass);\n` +
-        `ALTER TABLE "private"."bar" ALTER COLUMN "wat" DROP DEFAULT;`
+        `ALTER TABLE "private"."bar" ALTER COLUMN "wat" DROP DEFAULT;\n` +
+        `ALTER TABLE "private"."bar" DROP CONSTRAINT "baz_pkey";\n` +
+        `ALTER TABLE "private"."bar" ALTER COLUMN "baz" DROP NOT NULL;\n` +
+        `ALTER TABLE "private"."bar" RENAME CONSTRAINT "qux_check" TO "qux_validation";`
       );
-
-      // TODO: alter table constraints
+      // TODO: more constraints
     });
 
     it('generates queries to remove columns', () => {
@@ -184,6 +191,7 @@ describe('PgConnection', () => {
         columnChanges: [
           { type: 'remove', column: 'baz' },
         ],
+        constraintChanges: [],
       };
 
       let sql = new PgConnection().generateTableChangeQuery(changes, ID_STRUCTURE());
@@ -205,6 +213,13 @@ describe('PgConnection', () => {
           { type: 'add', column: 'wat', dataType: 'text', defaultValue: 'asdf', defaultType: 'constant' },
           { type: 'add', column: 'plop', dataType: 'character varying', defaultValue: 'qwer', defaultType: 'sequence' },
         ],
+        constraintChanges: [
+          { type: 'add', constraintType: 'not_null', constraint: '', column: 'qux' },
+          { type: 'add', constraintType: 'primary', constraint: 'foo_pkey', column: 'qux' },
+          { type: 'add', constraintType: 'unique', constraint: 'foo_qux_key', column: 'qux' },
+          { type: 'add', constraintType: 'foreign', constraint: 'foo_norf_fkey', column: 'norf', toSchema: 'public', toTable: 'bar', toColumn: 'id' },
+          { type: 'add', constraintType: 'check', constraint: 'foo_wat_check', column: 'wat', expression: "wat != 'plop'" },
+        ]
       };
 
       let sql = new PgConnection().generateTableChangeQuery(changes, ID_STRUCTURE());
@@ -212,10 +227,13 @@ describe('PgConnection', () => {
         `ALTER TABLE "public"."foo" ADD COLUMN "qux" text;\n` +
         `ALTER TABLE "public"."foo" ADD COLUMN "norf" integer DEFAULT 7;\n` +
         `ALTER TABLE "public"."foo" ADD COLUMN "wat" text DEFAULT 'asdf';\n` +
-        `ALTER TABLE "public"."foo" ADD COLUMN "plop" character varying DEFAULT nextval('qwer'::regclass);`
+        `ALTER TABLE "public"."foo" ADD COLUMN "plop" character varying DEFAULT nextval('qwer'::regclass);\n` +
+        `ALTER TABLE "public"."foo" ALTER COLUMN "qux" SET NOT NULL;\n` +
+        `ALTER TABLE "public"."foo" ADD PRIMARY KEY ("qux");\n` +
+        `ALTER TABLE "public"."foo" ADD UNIQUE ("qux");\n` +
+        `ALTER TABLE "public"."foo" ADD CONSTRAINT "foo_norf_fkey" FOREIGN KEY ("norf") REFERENCES "public"."bar"("id");\n` +
+        `ALTER TABLE "public"."foo" ADD CHECK (wat != 'plop');`
       );
-
-      // TODO: add column with constraints
     });
   });
 });

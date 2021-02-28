@@ -74,7 +74,19 @@
             </td>
             <td class="table-cell">
               <div class="flex">
-                <button v-for="constraint in column.constraints" :key="constraint" :class="`table-button table-button--${constraint.type}`">
+                <button
+                  v-for="constraint in column.constraints"
+                  :key="constraint"
+                  :class="{
+                    [`table-button selectable ${constraint.type}`]: true,
+                    'selected': selectedConstraint === constraint,
+                    'removed': constraint.toBeRemoved,
+                  }"
+                  @click="selectedConstraint = constraint"
+                  @focus="selectedConstraint = constraint"
+                  @blur="selectedConstraint === constraint && (selectedConstraint = null)"
+                  @keydown.delete="deleteConstraint(column, constraint)"
+                >
                   {{ constraintText(constraint) }}
                 </button>
                 <button class="table-button new-constraint">
@@ -109,7 +121,7 @@
               <input type="text" class="table-input" v-model="index.name" :placeholder="index.isNew ? `${table}_idx` : structure.indexes[i].name" />
             </td>
             <td class="table-cell">
-              <span :class="`table-button table-button--${index.type}`">{{ INDEX_TYPE_LABELS[index.type] }}</span>
+              <span :class="`table-button ${index.type}`">{{ INDEX_TYPE_LABELS[index.type] }}</span>
             </td>
             <td class="table-cell">
               <div class="flex">
@@ -279,15 +291,7 @@ td {
   }
 
   .removed & {
-    &::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      height: 2px;
-      left: 0;
-      right: 0;
-      background: red;
-    }
+    @include removed;
 
     &:first-child::after {
       left: -0.5rem;
@@ -334,6 +338,7 @@ td {
 }
 
 .table-button {
+  position: relative;
   border: 1px solid map-get($gray, light);
   border-radius: $border-radius-small;
   background: map-get($gray, lightest);
@@ -344,19 +349,31 @@ td {
     margin-left: 0.25rem;
   }
 
-  &--primary {
+  &.primary {
     background-color: $primary-key-background;
     border-color: $primary-key-border;
   }
 
-  &--foreign {
+  &.foreign {
     background-color: $foreign-key-background;
     border-color: $foreign-key-border;
   }
 
-  &--unique {
+  &.unique {
     background-color: $unique-background;
     border-color: $unique-border;
+  }
+
+  &.selected.selectable {
+    outline: -webkit-focus-ring-color auto 1px;
+  }
+
+  &.selectable:focus:not(.selected) {
+    outline: none;
+  }
+
+  &.removed {
+    @include removed;
   }
 }
 
@@ -470,6 +487,8 @@ export default {
     const columnsBody = ref(null);
     const indexesBody = ref(null);
 
+    const selectedConstraint = ref(null);
+
     const constraintText = (con) => {
       switch (con.type) {
         case 'primary': return 'PRIMARY KEY';
@@ -548,7 +567,15 @@ export default {
       if (!column.defaultType) {
         column.defaultValue = '';
       }
-    }
+    };
+
+    const deleteConstraint = (column, constraint) => {
+      if (constraint.isNew) {
+        column.constraints = column.constraints.filter(con => con !== constraint);
+      } else {
+        constraint.toBeRemoved = true;
+      }
+    };
 
     const newIndex = () => {
       changes.structure.indexes.push({
@@ -583,7 +610,13 @@ export default {
             column.name !== changedColumn.name ||
             column.type !== changedColumn.type ||
             column.defaultValue !== changedColumn.defaultValue ||
-            column.defaultType !== changedColumn.defaultType; // TODO: compare constraints
+            column.defaultType !== changedColumn.defaultType ||
+            column.constraints.some((constraint, cindex) => {
+              let changedConstraint = changedColumn.constraints[cindex];
+              return changedConstraint.toBeRemoved ||
+                constraint.name !== changedConstraint.name;
+            }) ||
+            column.constraints.some(constraint => constraint.isNew);
         }) ||
         changes.structure.columns.some(column => column.isNew) ||
         structure.value.indexes.some((index, i) => {
@@ -615,6 +648,7 @@ export default {
       }
 
       m.columnChanges = [];
+      m.constraintChanges = [];
       structure.value.columns.forEach((column, index) => {
         let changedColumn = changes.structure.columns[index];
         if (changedColumn.toBeRemoved) {
@@ -634,7 +668,17 @@ export default {
             m.columnChanges.push({ type: 'removeDefault', column: changedColumn.name });
           }
         }
-        // TODO: constraints
+        column.constraints.forEach((constraint, cindex) => {
+          let changedConstraint = changedColumn.constraints[cindex];
+          if (changedConstraint.toBeRemoved) {
+            m.constraintChanges.push({ type: 'remove', constraintType: constraint.type, constraint: constraint.name, column: changedColumn.name });
+            return;
+          }
+          if (constraint.name !== changedConstraint.name) {
+            m.constraintChanges.push({ type: 'rename', constraint: constraint.name, newName: changedConstraint.name });
+          }
+          // TODO: more constraints
+        });
       });
 
       changes.structure.columns.filter(x => x.isNew).forEach(column => {
@@ -683,6 +727,8 @@ export default {
       changeColumnDefault,
       INDEX_TYPE_LABELS,
       constraintText,
+      selectedConstraint,
+      deleteConstraint,
     };
   },
 };

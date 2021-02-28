@@ -20,6 +20,14 @@ function dq(s) {
   return s.replace(/^"(.+)"$/, '$1').replace(/""/g, '"');
 }
 
+/**
+ * @param {string} s
+ * @returns {string}
+ */
+function q(s) {
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
 export default class PgConnection {
   constructor(config = {}) {
     this.config = config;
@@ -142,7 +150,7 @@ export default class PgConnection {
     if (structure.table.type !== 'VIEW') {
       let orderByColumn = 'ctid';
       if (structure.primaryKey) orderByColumn = structure.primaryKey;
-      orderBy = `ORDER BY "${orderByColumn}" ASC`
+      orderBy = `ORDER BY ${q(orderByColumn)} ASC`
     }
 
     result = await this.query({
@@ -356,7 +364,7 @@ export default class PgConnection {
     if (!updates || updates.length === 0) return null;
 
     return updates.map(update => {
-      let changes = Object.entries(update.changes).map(([col, value]) => `"${col}"='${value}'`).join(', ');
+      let changes = Object.entries(update.changes).map(([col, value]) => `${q(col)}='${value}'`).join(', ');
       let where = this.identifyConditions(update.row, structure);
       return `UPDATE ${this.fullTable(structure.table)} SET ${changes} WHERE ${where};`;
     }).join("\n")
@@ -378,23 +386,23 @@ export default class PgConnection {
       let values = ' VALUES(DEFAULT)';
       let columns = Object.keys(insert);
       if (columns.length > 0) {
-        values = `(${columns.map(c => `"${c}"`).join(', ')}) VALUES(${columns.map(c => `'${insert[c]}'`).join(', ')})`;
+        values = `(${columns.map(q).join(', ')}) VALUES(${columns.map(c => `'${insert[c]}'`).join(', ')})`;
       }
       return `INSERT INTO ${this.fullTable(structure.table)}${values};`;
     }).join("\n");
   }
 
   identifyConditions(row, structure) {
-    if (structure.primaryKey) return `"${structure.primaryKey}"=${row[structure.primaryKey]}`;
+    if (structure.primaryKey) return `${q(structure.primaryKey)}=${row[structure.primaryKey]}`;
     let rowConditions = Object.entries(row).map(([col, value]) => this.columnEqualsValue(col, value)).join(' AND ');
     return `ctid IN (SELECT ctid FROM ${this.fullTable(structure.table)} WHERE ${rowConditions} LIMIT 1 FOR UPDATE)`;
   }
 
   columnEqualsValue(col, value) {
     if (!value) {
-      return `"${col}" IS NULL`;
+      return `${q(col)} IS NULL`;
     } else {
-      return `"${col}"='${value}'`;
+      return `${q(col)}='${value}'`;
     }
   }
 
@@ -415,11 +423,13 @@ export default class PgConnection {
     let queries = [];
 
     if (changes.tableChanges.name) {
-      queries.push(`ALTER TABLE ${this.fullTable(structure.table)} RENAME TO "${changes.tableChanges.name}";`);
+      queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+        `RENAME TO ${q(changes.tableChanges.name)};`);
       structure.table.name = changes.tableChanges.name;
     }
     if (changes.tableChanges.schema) {
-      queries.push(`ALTER TABLE ${this.fullTable(structure.table)} SET SCHEMA "${changes.tableChanges.schema}";`);
+      queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+        `SET SCHEMA ${q(changes.tableChanges.schema)};`);
       structure.table.schema = changes.tableChanges.schema;
     }
     // TODO: change tablespace?
@@ -427,31 +437,88 @@ export default class PgConnection {
     changes.columnChanges.forEach(change => {
       switch (change.type) {
         case 'rename':
-          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} RENAME COLUMN "${change.column}" TO "${change.newName}";`);
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+            `RENAME COLUMN ${q(change.column)} ` +
+            `TO ${q(change.newName)};`);
           break;
         case 'changeType':
-          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ALTER COLUMN "${change.column}" TYPE ${change.newType};`);
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+            `ALTER COLUMN ${q(change.column)} ` +
+            `TYPE ${change.newType};`);
           break;
         case 'changeDefault': {
-          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ALTER COLUMN "${change.column}" SET DEFAULT ${this.formatDefaultValue(change.newDefault, change.newDefaultType)};`);
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+            `ALTER COLUMN ${q(change.column)} ` +
+            `SET DEFAULT ${this.formatDefaultValue(change.newDefault, change.newDefaultType)};`);
           break;
         }
         case 'removeDefault':
-          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ALTER COLUMN "${change.column}" DROP DEFAULT;`);
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+            `ALTER COLUMN ${q(change.column)} ` +
+            `DROP DEFAULT;`);
           break;
         case 'remove':
-          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} DROP COLUMN "${change.column}";`);
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+            `DROP COLUMN ${q(change.column)};`);
           break;
         case 'add': {
-          let q = `ALTER TABLE ${this.fullTable(structure.table)} ADD COLUMN "${change.column}" ${change.dataType}`;
+          let qry = `ALTER TABLE ${this.fullTable(structure.table)} ` + 
+            `ADD COLUMN ${q(change.column)} ${change.dataType}`;
           if (change.defaultValue) {
-            q += ` DEFAULT ${this.formatDefaultValue(change.defaultValue, change.defaultType)}`;
+            qry += ` DEFAULT ${this.formatDefaultValue(change.defaultValue, change.defaultType)}`;
           }
-          queries.push(q + ';');
+          queries.push(qry + ';');
           break;
         }
       }
     });
+
+    changes.constraintChanges.forEach(change => {
+      switch (change.type) {
+        case 'rename':
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+            `RENAME CONSTRAINT ${q(change.constraint)} ` +
+            `TO ${q(change.newName)};`);
+          break;
+        case 'add':
+          switch (change.constraintType) {
+            case 'not_null':
+              queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+                `ALTER COLUMN ${q(change.column)} ` +
+                `SET NOT NULL;`);
+              break;
+            case 'primary':
+              queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+                `ADD PRIMARY KEY (${q(change.column)});`);
+              break;
+            case 'foreign':
+              queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+                `ADD CONSTRAINT ${q(change.constraint)} ` +
+                `FOREIGN KEY (${q(change.column)}) ` +
+                `REFERENCES ${q(change.toSchema)}.${q(change.toTable)}(${q(change.toColumn)});`);
+              break;
+            case 'unique':
+              queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+                `ADD UNIQUE (${q(change.column)});`);
+              break;
+            case 'check':
+              queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+                `ADD CHECK (${change.expression});`);
+              break;
+          }
+          break;
+        case 'remove':
+          if (change.constraintType === 'not_null') {
+            queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+              `ALTER COLUMN ${q(change.column)} ` +
+              `DROP NOT NULL;`);
+          } else {
+            queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+              `DROP CONSTRAINT ${q(change.constraint)};`);
+          }
+          break;
+      }
+    })
 
     // TODO: indexes
 
@@ -470,7 +537,7 @@ export default class PgConnection {
   }
 
   fullTable({ name, schema }) {
-    return `"${schema}"."${name}"`;
+    return `${q(schema)}.${q(name)}`;
   }
 
   query(...args) {
