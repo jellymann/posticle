@@ -5,6 +5,29 @@ import buildWhereFromFilters from './buildWhereFromFilter';
 
 const CONNECTIONS = {};
 
+const INDEXDEF_RGX = /^CREATE (UNIQUE )?INDEX .+ ON .+ USING (.+) \((.+)\)$/;
+const PKEY_RGX = /^Y KEY \((.+)\)$/;
+const FKEY_RGX = /^N KEY \((.+)\) REFERENCES (.+)\((.+)\)$/;
+const UNIQ_RGX = /^\((.+)\)$/;
+const CHECK_RGX = /^\(\((.+)\)\)$/;
+
+
+/**
+ * @param {string} s
+ * @returns {string}
+ */
+function dq(s) {
+  return s.replace(/^"(.+)"$/, '$1').replace(/""/g, '"');
+}
+
+/**
+ * @param {string} s
+ * @returns {string}
+ */
+function q(s) {
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
 export default class PgConnection {
   constructor(config = {}) {
     this.config = config;
@@ -74,6 +97,7 @@ export default class PgConnection {
     `);
 
     return result.rows.map(row => ({
+      id: uuid(),
       name: row.table_name,
       type: row.table_type,
       schema: 'public'
@@ -98,6 +122,7 @@ export default class PgConnection {
       }
 
       schema.tables.push({
+        id: uuid(),
         name: row.table_name,
         type: row.table_type,
         schema: row.table_schema
@@ -125,7 +150,7 @@ export default class PgConnection {
     if (structure.table.type !== 'VIEW') {
       let orderByColumn = 'ctid';
       if (structure.primaryKey) orderByColumn = structure.primaryKey;
-      orderBy = `ORDER BY "${orderByColumn}" ASC`
+      orderBy = `ORDER BY ${q(orderByColumn)} ASC`
     }
 
     result = await this.query({
@@ -156,15 +181,11 @@ export default class PgConnection {
       AND table_name = '${table.name}'
     `);
 
-    console.log("RESUUUUUUUUUUUUUUUUUUUUUUUUUUULT")
-    console.log(table)
-    console.log(tableResult);
-
     let type = tableResult.rows[0].table_type;
 
     let result = await this.query({
       text: `
-        SELECT c.column_name, c.data_type, c.column_default, c.is_nullable
+        SELECT c.column_name, c.data_type, c.udt_name, c.column_default, c.is_nullable
         FROM information_schema.columns as c
         WHERE c.table_schema = $1
         AND c.table_name = $2;
@@ -172,47 +193,149 @@ export default class PgConnection {
       values: [table.schema, table.name]
     });
 
-    let pkeysResult = await this.query({
+    let conResults = await this.query({
       text: `
-        SELECT kcu.column_name AS key_column
-        FROM information_schema.table_constraints tco
-        JOIN information_schema.key_column_usage kcu 
-            ON kcu.constraint_name = tco.constraint_name
-            AND kcu.constraint_schema = tco.constraint_schema
-            AND kcu.constraint_name = tco.constraint_name
-            AND kcu.table_schema = $1
-            AND kcu.table_name = $2
-        WHERE tco.constraint_type = 'PRIMARY KEY'
-        LIMIT 1;
+        SELECT
+          c.conname::information_schema.sql_identifier AS name,
+              c.contype AS type,
+              "substring"(pg_get_constraintdef(c.oid), 7)::information_schema.character_data AS clause
+        FROM pg_namespace nc,
+          pg_namespace nr,
+          pg_constraint c,
+          pg_class r
+        WHERE nc.oid = c.connamespace
+          AND nr.oid = r.relnamespace
+          AND c.conrelid = r.oid
+          AND nr.nspname = $1
+          AND r.relname = $2
+          AND (c.contype <> ALL (ARRAY['t'::"char", 'x'::"char"]))
+          AND (r.relkind = ANY (ARRAY['r'::"char", 'p'::"char"]))
+          AND NOT pg_is_other_temp_schema(nr.oid)
+          AND (pg_has_role(r.relowner, 'USAGE'::text)
+            OR has_table_privilege(r.oid, 'INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER'::text)
+            OR has_any_column_privilege(r.oid, 'INSERT, UPDATE, REFERENCES'::text))
       `,
       values: [table.schema, table.name]
     });
 
-    let primaryKey = null;
-    if (pkeysResult.rows.length === 1) {
-      primaryKey = pkeysResult.rows[0].key_column;
-    }
+    let tableConstraints = conResults.rows.map((con => this.parseConstraint(con)));
+    let primaryCon = tableConstraints.find(con => con.type === 'primary');
+    let primaryKey = primaryCon ? primaryCon.column : null;
+
+    let columnRgx = new RegExp(`(?:^|\\W)(${result.rows.map(c => c.column_name).join('|')})(?:\\W|$)`)
+    tableConstraints.filter(con => con.type === 'check').forEach(con => {
+      let match = con.expression.match(columnRgx);
+      if (match) con.column = dq(match[1]);
+    });
+
+    let indexResult = await this.query({
+      text: `
+        SELECT indexname, indexdef
+        FROM pg_indexes
+        WHERE schemaname = $1
+        AND tablename = $2;
+      `,
+      values: [table.schema, table.name]
+    });
 
     return {
       table: { ...table, type },
       primaryKey,
       columns: result.rows.map(row => {
-        let constraints = [];
+        let constraints = tableConstraints.filter(con => con.column === row.column_name);
 
-        if (row.column_name === primaryKey) constraints.push('PRIMARY KEY');
-        if (row.is_nullable === 'NO') constraints.push('NOT NULL');
+        if (row.is_nullable === 'NO' && row.column_name !== primaryKey) {
+          constraints.push({ type: 'not_null' });
+        }
+
+        let dataType = row.data_type;
+        if (dataType === 'USER-DEFINED') dataType = row.udt_name;
+        let defaultValue = row.column_default;
+        let defaultType = 'expression';
+        let constRgx = new RegExp(`^'(.*)'::${dataType}$`);
+        let seqRgx = new RegExp("^nextval\\('(.+)'::regclass\\)$")
+        if (defaultValue) {
+          let match;
+          // eslint-disable-next-line no-cond-assign
+          if (match = defaultValue.match(constRgx)) {
+            defaultValue = match[1];
+            defaultType = 'constant';
+          // eslint-disable-next-line no-cond-assign
+          } else if (match = defaultValue.match(seqRgx)) {
+            defaultValue = match[1];
+            defaultType = 'sequence';
+          }
+        } else {
+          defaultType = null;
+        }
 
         return {
           name: row.column_name,
-          type: row.data_type,
-          defaultValue: row.column_default,
+          type: dataType,
+          defaultType,
+          defaultValue,
           constraints,
           isStringish:
-            row.data_type == "string" ||
-            row.data_type == "text" ||
-            row.data_type == "character varying"
+            dataType == "string" ||
+            dataType == "text" ||
+            dataType == "character varying"
+        };
+      }),
+      indexes: indexResult.rows.map(row => {
+        return {
+          name: row.indexname,
+          ...this.parseIndexDefinition(row.indexdef, primaryKey)
         };
       })
+    };
+  }
+
+  parseConstraint({ name, type, clause }) {
+    switch (type) {
+      case 'p': {
+        let [, column] = clause.trim().match(PKEY_RGX);
+        return { type: 'primary', name, column };
+      }
+      case 'f': {
+        let [, column, foreignTable, foreignColumn] = clause.trim().match(FKEY_RGX);
+        return { type: 'foreign', name, column: dq(column), foreignTable: dq(foreignTable), foreignColumn: dq(foreignColumn) };
+      }
+      case 'u': {
+        let [, column] = clause.trim().match(UNIQ_RGX);
+        return { type: 'unique', name, column };
+      }
+      case 'c': {
+        let [, expression] = clause.trim().match(CHECK_RGX);
+        return { type: 'check', name, expression };
+      }
+    }
+  }
+
+  /**
+   * 
+   * @param {String} indexdef 
+   */
+  parseIndexDefinition(indexdef, primaryKey) {
+    let match = indexdef.match(INDEXDEF_RGX);
+    if (!match) throw new Error(`'${indexdef}' is a funky index definition!`);
+
+    let [, unique, method, columns] = match;
+
+    columns = columns.split(',').map(x => dq(x.trim()));
+
+    let type = 'index';
+    if (unique) {
+      if (columns.length === 1 && columns[0] === primaryKey) {
+        type = 'primary';
+      } else {
+        type = 'unique';
+      }
+    }
+
+    return {
+      type,
+      method,
+      columns,
     };
   }
 
@@ -241,7 +364,7 @@ export default class PgConnection {
     if (!updates || updates.length === 0) return null;
 
     return updates.map(update => {
-      let changes = Object.entries(update.changes).map(([col, value]) => `"${col}"='${value}'`).join(', ');
+      let changes = Object.entries(update.changes).map(([col, value]) => `${q(col)}='${value}'`).join(', ');
       let where = this.identifyConditions(update.row, structure);
       return `UPDATE ${this.fullTable(structure.table)} SET ${changes} WHERE ${where};`;
     }).join("\n")
@@ -263,28 +386,158 @@ export default class PgConnection {
       let values = ' VALUES(DEFAULT)';
       let columns = Object.keys(insert);
       if (columns.length > 0) {
-        values = `(${columns.map(c => `"${c}"`).join(', ')}) VALUES(${columns.map(c => `'${insert[c]}'`).join(', ')})`;
+        values = `(${columns.map(q).join(', ')}) VALUES(${columns.map(c => `'${insert[c]}'`).join(', ')})`;
       }
       return `INSERT INTO ${this.fullTable(structure.table)}${values};`;
     }).join("\n");
   }
 
   identifyConditions(row, structure) {
-    if (structure.primaryKey) return `"${structure.primaryKey}"=${row[structure.primaryKey]}`;
+    if (structure.primaryKey) return `${q(structure.primaryKey)}=${row[structure.primaryKey]}`;
     let rowConditions = Object.entries(row).map(([col, value]) => this.columnEqualsValue(col, value)).join(' AND ');
     return `ctid IN (SELECT ctid FROM ${this.fullTable(structure.table)} WHERE ${rowConditions} LIMIT 1 FOR UPDATE)`;
   }
 
   columnEqualsValue(col, value) {
     if (!value) {
-      return `"${col}" IS NULL`;
+      return `${q(col)} IS NULL`;
     } else {
-      return `"${col}"='${value}'`;
+      return `${q(col)}='${value}'`;
+    }
+  }
+
+  async performTableChanges(changes) {
+    let sql = await this.generateTableChangeQueryForChanges(changes);
+
+    await this.query(sql);
+    return true;
+  }
+
+  async generateTableChangeQueryForChanges(changes) {
+    let structure = await this.fetchStructure(changes.table);
+
+    return this.generateTableChangeQuery(changes, structure);
+  }
+
+  generateTableChangeQuery(changes, structure) {
+    let queries = [];
+
+    if (changes.tableChanges.name) {
+      queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+        `RENAME TO ${q(changes.tableChanges.name)};`);
+      structure.table.name = changes.tableChanges.name;
+    }
+    if (changes.tableChanges.schema) {
+      queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+        `SET SCHEMA ${q(changes.tableChanges.schema)};`);
+      structure.table.schema = changes.tableChanges.schema;
+    }
+    // TODO: change tablespace?
+
+    changes.columnChanges.forEach(change => {
+      switch (change.type) {
+        case 'rename':
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+            `RENAME COLUMN ${q(change.column)} ` +
+            `TO ${q(change.newName)};`);
+          break;
+        case 'changeType':
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+            `ALTER COLUMN ${q(change.column)} ` +
+            `TYPE ${change.newType};`);
+          break;
+        case 'changeDefault': {
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+            `ALTER COLUMN ${q(change.column)} ` +
+            `SET DEFAULT ${this.formatDefaultValue(change.newDefault, change.newDefaultType)};`);
+          break;
+        }
+        case 'removeDefault':
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+            `ALTER COLUMN ${q(change.column)} ` +
+            `DROP DEFAULT;`);
+          break;
+        case 'remove':
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+            `DROP COLUMN ${q(change.column)};`);
+          break;
+        case 'add': {
+          let qry = `ALTER TABLE ${this.fullTable(structure.table)} ` + 
+            `ADD COLUMN ${q(change.column)} ${change.dataType}`;
+          if (change.defaultValue) {
+            qry += ` DEFAULT ${this.formatDefaultValue(change.defaultValue, change.defaultType)}`;
+          }
+          queries.push(qry + ';');
+          break;
+        }
+      }
+    });
+
+    changes.constraintChanges.forEach(change => {
+      switch (change.type) {
+        case 'rename':
+          queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+            `RENAME CONSTRAINT ${q(change.constraint)} ` +
+            `TO ${q(change.newName)};`);
+          break;
+        case 'add':
+          switch (change.constraintType) {
+            case 'not_null':
+              queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+                `ALTER COLUMN ${q(change.column)} ` +
+                `SET NOT NULL;`);
+              break;
+            case 'primary':
+              queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+                `ADD PRIMARY KEY (${q(change.column)});`);
+              break;
+            case 'foreign':
+              queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+                `ADD CONSTRAINT ${q(change.constraint)} ` +
+                `FOREIGN KEY (${q(change.column)}) ` +
+                `REFERENCES ${q(change.toSchema)}.${q(change.toTable)}(${q(change.toColumn)});`);
+              break;
+            case 'unique':
+              queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+                `ADD UNIQUE (${q(change.column)});`);
+              break;
+            case 'check':
+              queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+                `ADD CHECK (${change.expression});`);
+              break;
+          }
+          break;
+        case 'remove':
+          if (change.constraintType === 'not_null') {
+            queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+              `ALTER COLUMN ${q(change.column)} ` +
+              `DROP NOT NULL;`);
+          } else {
+            queries.push(`ALTER TABLE ${this.fullTable(structure.table)} ` +
+              `DROP CONSTRAINT ${q(change.constraint)};`);
+          }
+          break;
+      }
+    })
+
+    // TODO: indexes
+
+    return queries.join("\n");
+  }
+
+  formatDefaultValue(value, type) {
+    switch (type) {
+      case 'constant':
+        return `'${value}'`;
+      case 'sequence':
+        return `nextval('${value}'::regclass)`;
+      default:
+        return value;
     }
   }
 
   fullTable({ name, schema }) {
-    return `"${schema}"."${name}"`;
+    return `${q(schema)}.${q(name)}`;
   }
 
   query(...args) {

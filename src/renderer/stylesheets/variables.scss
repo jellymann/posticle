@@ -24,8 +24,18 @@ $highlight-foreground: map-get($gray, lightest);
 $edited-background: #ffeeaf;
 $deleted-background: #ff9999;
 
+$border-radius-small: 3px;
 $border-radius: 6px;
 $border-radius-large: 12px;
 
 $view-icon-color: #007AA0;
 $table-icon-color: #B78400;
+
+$primary-key-background: #F7F7E0;
+$primary-key-border: #D8D8B1;
+
+$foreign-key-background: #E8F8E8;
+$foreign-key-border: #B6E6B6;
+
+$unique-background: #E5E9F5;
+$unique-border: #A9B5DE;
