@@ -177,7 +177,7 @@ export default class PgConnection {
 
     let result = await this.query({
       text: `
-        SELECT c.column_name, c.data_type, c.column_default, c.is_nullable
+        SELECT c.column_name, c.data_type, c.udt_name, c.column_default, c.is_nullable
         FROM information_schema.columns as c
         WHERE c.table_schema = $1
         AND c.table_name = $2;
@@ -240,9 +240,11 @@ export default class PgConnection {
           constraints.push({ type: 'not_null' });
         }
 
+        let dataType = row.data_type;
+        if (dataType === 'USER-DEFINED') dataType = row.udt_name;
         let defaultValue = row.column_default;
         let defaultType = 'expression';
-        let constRgx = new RegExp(`^'(.*)'::${row.data_type}$`);
+        let constRgx = new RegExp(`^'(.*)'::${dataType}$`);
         let seqRgx = new RegExp("^nextval\\('(.+)'::regclass\\)$")
         if (defaultValue) {
           let match;
@@ -261,14 +263,14 @@ export default class PgConnection {
 
         return {
           name: row.column_name,
-          type: row.data_type,
+          type: dataType,
           defaultType,
           defaultValue,
           constraints,
           isStringish:
-            row.data_type == "string" ||
-            row.data_type == "text" ||
-            row.data_type == "character varying"
+            dataType == "string" ||
+            dataType == "text" ||
+            dataType == "character varying"
         };
       }),
       indexes: indexResult.rows.map(row => {
